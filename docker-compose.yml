@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: eyewear-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456  # Mật khẩu database
+      MYSQL_DATABASE: eyewear_db   # Tên database tự tạo
+    ports:
+      - "3306:3306"                # Map port ra ngoài máy thật
+    volumes:
+      - db_data:/var/lib/mysql     # Giữ lại dữ liệu khi tắt container
+
+volumes:
+  db_data:
