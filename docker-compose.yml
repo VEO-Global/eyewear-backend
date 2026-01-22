@@ -1,17 +1,35 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  mysql:
+  # --- DỊCH VỤ 1: DATABASE (MySQL) ---
+  mysqldb: # Tên đặt gì cũng được, nhưng phải nhớ để config
     image: mysql:8.0
     container_name: eyewear-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: 123456  # Mật khẩu database
-      MYSQL_DATABASE: eyewear_db   # Tên database tự tạo
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: eyewear_db
     ports:
-      - "3306:3306"                # Map port ra ngoài máy thật
+      - "3306:3306" # Map port 3306 của Docker ra 3306 máy thật
     volumes:
-      - db_data:/var/lib/mysql     # Giữ lại dữ liệu khi tắt container
+      - db_data:/var/lib/mysql
+
+  # --- DỊCH VỤ 2: BACKEND (Spring Boot) ---
+  backend:
+    build: . # Dấu chấm nghĩa là: "Tìm file Dockerfile ở ngay thư mục này để build"
+    container_name: eyewear-backend
+    restart: on-failure
+    ports:
+      - "8080:8080" # Map port 8080 để Frontend gọi vào
+    depends_on:
+      - mysqldb # Bắt buộc: Chờ ông MySQL chạy xong thì ông này mới được chạy
+    environment:
+      # Cấu hình Spring Boot để kết nối vào service 'mysqldb' ở trên
+      # Lưu ý: password phải khớp với mục MYSQL_ROOT_PASSWORD ở trên
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/eyewear_db?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
 
 volumes:
   db_data:
