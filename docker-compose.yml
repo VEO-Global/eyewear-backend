@@ -10,7 +10,7 @@ services:
       MYSQL_ROOT_PASSWORD: 123456
       MYSQL_DATABASE: eyewear_db
     ports:
-      - "3306:3306" # Map port 3306 của Docker ra 3306 máy thật
+      - "3307:3306" # Map port 3307 của Docker ra 3306 máy thật
     volumes:
       - db_data:/var/lib/mysql
 
@@ -32,4 +32,7 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
 
 volumes:
-  db_data:
+  volumes:
+      - db_data:/var/lib/mysql
+      # Tự động chạy file sql khi khởi động lần đầu
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
