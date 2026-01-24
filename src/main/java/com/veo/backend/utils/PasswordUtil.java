@@ -1,4 +1,5 @@
 package com.veo.backend.utils;
 
-public class Utils {
+public class PasswordUtil {
+
 }

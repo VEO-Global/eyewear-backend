@@ -1,4 +1,4 @@
-package com.veo.backend.service.impl;
+package com.veo.backend.service;
 
 public class UserService {
 }
