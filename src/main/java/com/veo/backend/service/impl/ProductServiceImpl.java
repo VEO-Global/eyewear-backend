@@ -1,7 +1,8 @@
 package com.veo.backend.service.impl;
 
 import com.veo.backend.dto.request.ProductCreateRequest;
-import com.veo.backend.dto.response.ProductCreateResponse;
+import com.veo.backend.dto.request.ProductUpdateRequest;
+import com.veo.backend.dto.response.ProductResponse;
 import com.veo.backend.entity.Category;
 import com.veo.backend.entity.Product;
 import com.veo.backend.repository.CategoryRepository;
@@ -20,12 +21,15 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
 
     @Override
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+    public List<ProductResponse> getAllProducts() {
+        return productRepository.findByIsActiveTrue()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     @Override
-    public ProductCreateResponse createProduct(ProductCreateRequest request) {
+    public ProductResponse createProduct(ProductCreateRequest request) {
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() ->new RuntimeException("Category not found with id: " + request.getCategoryId()));
 
@@ -46,8 +50,47 @@ public class ProductServiceImpl implements ProductService {
         return mapToResponse(savedProduct);
     }
 
-    private ProductCreateResponse mapToResponse(Product product) {
-        return ProductCreateResponse.builder()
+    @Override
+    public ProductResponse getById(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+
+        return mapToResponse(product);
+    }
+
+    @Override
+    public ProductResponse updateProduct(Long id, ProductUpdateRequest request) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+
+        if (request.getCategoryId() != null) {
+            Category category = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Category not found with id: " + request.getCategoryId()));
+            product.setCategory(category);
+        }
+
+        if (request.getName() != null) product.setName(request.getName());
+        if (request.getBrand() != null) product.setBrand(request.getBrand());
+        if (request.getDescription() != null) product.setDescription(request.getDescription());
+        if (request.getBasePrice() != null) product.setBasePrice(request.getBasePrice());
+        if (request.getMaterial() != null) product.setMaterial(request.getMaterial());
+        if (request.getGender() != null) product.setGender(request.getGender());
+        if (request.getIsActive() != null) product.setIsActive(request.getIsActive());
+
+        return mapToResponse(productRepository.save(product));
+    }
+
+    @Override
+    public void deleteProduct(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+
+        product.setIsActive(false);
+        productRepository.save(product);
+    }
+
+    private ProductResponse mapToResponse(Product product) {
+        return ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
                 .brand(product.getBrand())

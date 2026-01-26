@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductCreateResponse {
+public class ProductResponse {
     private Long id;
 
     private String name;
@@ -24,8 +24,6 @@ public class ProductCreateResponse {
     private String material;
 
     private String gender;
-
-    private Integer quantity;
 
     private Boolean isActive;
 

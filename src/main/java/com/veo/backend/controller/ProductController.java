@@ -1,7 +1,8 @@
 package com.veo.backend.controller;
 
 import com.veo.backend.dto.request.ProductCreateRequest;
-import com.veo.backend.dto.response.ProductCreateResponse;
+import com.veo.backend.dto.request.ProductUpdateRequest;
+import com.veo.backend.dto.response.ProductResponse;
 import com.veo.backend.entity.Product;
 import com.veo.backend.service.ProductService;
 import org.springframework.http.ResponseEntity;
@@ -19,12 +20,27 @@ public class ProductController {
     }
 
     @GetMapping
-    public List<Product> getAllProducts() {
+    public List<ProductResponse> getAllProducts() {
         return service.getAllProducts();
     }
 
     @PostMapping
-    public ResponseEntity<ProductCreateResponse> createProduct(@RequestBody ProductCreateRequest request) {
+    public ResponseEntity<ProductResponse> createProduct(@RequestBody ProductCreateRequest request) {
         return ResponseEntity.ok(service.createProduct(request));
+    }
+
+    @GetMapping("/{id}")
+    public ProductResponse getById(@PathVariable Long id) {
+        return service.getById(id);
+    }
+
+    @PutMapping("/{id}")
+    public ProductResponse updateProduct(@PathVariable Long id, @RequestBody ProductUpdateRequest request) {
+        return service.updateProduct(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        service.deleteProduct(id);
     }
 }
