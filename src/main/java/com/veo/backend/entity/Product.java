@@ -37,6 +37,9 @@ public class Product {
 
     private String gender;
 
+    @Column(name = "model_3d_url")
+    private String model3dUrl;
+
     private Boolean isActive = true;
 
     private LocalDateTime createdAt;

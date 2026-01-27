@@ -31,6 +31,8 @@ public class ProductCreateRequest {
 
     private String gender;
 
+    private String model3dUrl;
+
     @NotNull
     @Min(0)
     private Integer quantity;

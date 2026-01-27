@@ -43,6 +43,7 @@ public class ProductServiceImpl implements ProductService {
                 .isActive(request.getIsActive() != null ? request.getIsActive() : true)
                 .createdAt(LocalDateTime.now())
                 .category(category)
+                .model3dUrl(request.getModel3dUrl())
                 .build();
 
         Product savedProduct = productRepository.save(product);
@@ -75,6 +76,7 @@ public class ProductServiceImpl implements ProductService {
         if (request.getBasePrice() != null) product.setBasePrice(request.getBasePrice());
         if (request.getMaterial() != null) product.setMaterial(request.getMaterial());
         if (request.getGender() != null) product.setGender(request.getGender());
+        if (request.getModel3dUrl() != null) product.setModel3dUrl(request.getModel3dUrl());
         if (request.getIsActive() != null) product.setIsActive(request.getIsActive());
 
         return mapToResponse(productRepository.save(product));
@@ -98,6 +100,7 @@ public class ProductServiceImpl implements ProductService {
                 .basePrice(product.getBasePrice())
                 .material(product.getMaterial())
                 .gender(product.getGender())
+                .model3dUrl(product.getModel3dUrl())
                 .isActive(product.getIsActive())
                 .createdAt(product.getCreatedAt())
                 .build();

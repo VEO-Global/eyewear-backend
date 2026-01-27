@@ -24,6 +24,8 @@ public class ProductUpdateRequest {
 
     private String gender;
 
+    private String model3dUrl;
+
     private Boolean isActive;
 
     private Long categoryId;

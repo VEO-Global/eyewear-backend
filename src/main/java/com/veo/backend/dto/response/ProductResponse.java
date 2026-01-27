@@ -25,6 +25,8 @@ public class ProductResponse {
 
     private String gender;
 
+    private String model3dUrl;
+
     private Boolean isActive;
 
     private LocalDateTime createdAt;
