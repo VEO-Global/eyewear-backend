@@ -53,6 +53,7 @@ CREATE TABLE products (
     base_price DECIMAL(15, 2) NOT NULL,
     material VARCHAR(100),
     gender VARCHAR(20),    -- Male, Female, Unisex
+    model_3d_url TEXT,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id)
