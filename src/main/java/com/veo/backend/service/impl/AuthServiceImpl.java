@@ -7,16 +7,13 @@ import com.veo.backend.entity.Role;
 import com.veo.backend.entity.User;
 import com.veo.backend.repository.RoleRepository;
 import com.veo.backend.repository.UserRepository;
-import com.veo.backend.security.CustomUserDetailsService;
+import com.veo.backend.security.JwtService;
 import com.veo.backend.service.AuthService;
-import com.veo.backend.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 
 @Service
@@ -27,10 +24,9 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private final CustomUserDetailsService customUserDetailsService;
 
     @Override
-    public String login(LoginRequest loginRequest) {
+    public AuthResponse login(LoginRequest loginRequest) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getEmail(),
@@ -38,29 +34,27 @@ public class AuthServiceImpl implements AuthService {
                 )
         );
 
-        UserDetails userDetails = customUserDetailsService.loadUserByUsername(loginRequest.getEmail());
+        User user = userRepository.findByEmail(loginRequest.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return jwtService.generateToken(userDetails);
+        String jwt = jwtService.generateToken(user);
+        return new AuthResponse(jwt);
     }
 
     @Override
-    public void register(RegisterRequest registerRequest) {
-        if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already exists");
-        }
-
+    public AuthResponse register(RegisterRequest registerRequest) {
         Role role = roleRepository.findByName("CUSTOMER")
                 .orElseThrow(() -> new RuntimeException("Role not found"));
 
-        User user = new User();
-        user.setEmail(registerRequest.getEmail());
-        user.setPasswordHash(passwordEncoder.encode(registerRequest.getPassword()));
-        user.setRole(role);
-        user.setFullName(registerRequest.getFullName());
-        user.setAvatarUrl(registerRequest.getAvatarUrl());
-        user.setCreatedAt(LocalDateTime.now());
-        user.setIsActive(true);
+        User user = User.builder()
+                .email(registerRequest.getEmail())
+                .passwordHash(passwordEncoder.encode(registerRequest.getPassword()))
+                .fullName(registerRequest.getFullName())
+                .role(role)
+                .build();
 
         userRepository.save(user);
+        String jwt = jwtService.generateToken(user);
+        return null;
     }
 }
