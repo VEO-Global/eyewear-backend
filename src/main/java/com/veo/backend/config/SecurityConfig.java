@@ -32,12 +32,23 @@ public class SecurityConfig {
                         s.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/user/profile").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products/**").hasRole("CUSTOMER")
-                        .requestMatchers("/api/user", "/api/user/**").hasRole("ADMIN")
+                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/user/profile", "/api/variants/**", "/api/categories")
+                        .hasAnyRole("CUSTOMER", "ADMIN")
+
+                        .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/variants/**", "/api/categories")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**", "/api/variants/**")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/variants/**")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers("/api/user/**")
+                        .hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
-
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
