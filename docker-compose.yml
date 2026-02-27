@@ -13,6 +13,8 @@ services:
       - "3307:3306" # Map port 3307 của Docker ra 3306 máy thật
     volumes:
       - db_data:/var/lib/mysql
+      # SỬA LỖI Ở ĐÂY: Dòng map file init.sql phải nằm trong mysqldb
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
   # --- DỊCH VỤ 2: BACKEND (Spring Boot) ---
   backend:
@@ -31,8 +33,6 @@ services:
       SPRING_DATASOURCE_PASSWORD: 123456
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
 
+# SỬA LỖI Ở ĐÂY: Phần volumes cuối file chỉ dùng để khai báo tên (db_data)
 volumes:
-  volumes:
-      - db_data:/var/lib/mysql
-      # Tự động chạy file sql khi khởi động lần đầu
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+  db_data:
