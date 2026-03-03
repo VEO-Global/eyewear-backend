@@ -4,6 +4,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -30,4 +31,6 @@ public class ProductResponse {
     private Boolean isActive;
 
     private LocalDateTime createdAt;
+
+    private List<ProductVariantResponse> variants;
 }

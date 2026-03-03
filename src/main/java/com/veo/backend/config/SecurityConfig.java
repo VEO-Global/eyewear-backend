@@ -32,21 +32,20 @@ public class SecurityConfig {
                         s.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
+                        // 1. NHỮNG API PUBLIC (Ai cũng vào được, không cần Token)
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/user/profile", "/api/variants/**", "/api/categories")
-                        .hasAnyRole("CUSTOMER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/variants/**", "/api/categories").permitAll()
 
-                        .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/variants/**", "/api/categories")
-                        .hasRole("ADMIN")
+                        // 2. CHỈ USER HOẶC ADMIN (Cần đăng nhập) mới xem được Profile
+                        .requestMatchers(HttpMethod.GET, "/api/user/profile").hasAnyRole("CUSTOMER", "ADMIN")
 
-                        .requestMatchers(HttpMethod.PUT, "/api/products/**", "/api/variants/**")
-                        .hasRole("ADMIN")
+                        // 3. QUYỀN CỦA ADMIN (Thêm/Sửa/Xóa sản phẩm)
+                        .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/variants/**", "/api/categories").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**", "/api/variants/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/variants/**").hasRole("ADMIN")
+                        .requestMatchers("/api/user/**").hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/variants/**")
-                        .hasRole("ADMIN")
-
-                        .requestMatchers("/api/user/**")
-                        .hasRole("ADMIN")
+                        // 4. Các request khác phải đăng nhập
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(

@@ -3,6 +3,7 @@ package com.veo.backend.service.impl;
 import com.veo.backend.dto.request.ProductCreateRequest;
 import com.veo.backend.dto.request.ProductUpdateRequest;
 import com.veo.backend.dto.response.ProductResponse;
+import com.veo.backend.dto.response.ProductVariantResponse;
 import com.veo.backend.entity.Category;
 import com.veo.backend.entity.Product;
 import com.veo.backend.repository.CategoryRepository;
@@ -31,7 +32,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductResponse createProduct(ProductCreateRequest request) {
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() ->new RuntimeException("Category not found with id: " + request.getCategoryId()));
+                .orElseThrow(() -> new RuntimeException("Category not found with id: " + request.getCategoryId()));
 
         Product product = Product.builder()
                 .name(request.getName())
@@ -91,7 +92,16 @@ public class ProductServiceImpl implements ProductService {
         productRepository.save(product);
     }
 
+
     private ProductResponse mapToResponse(Product product) {
+
+        List<ProductVariantResponse> variantResponses = null;
+        if (product.getVariants() != null) {
+            variantResponses = product.getVariants().stream()
+                    .map(this::mapToVariantResponse)
+                    .toList();
+        }
+
         return ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
@@ -103,6 +113,21 @@ public class ProductServiceImpl implements ProductService {
                 .model3dUrl(product.getModel3dUrl())
                 .isActive(product.getIsActive())
                 .createdAt(product.getCreatedAt())
+                .variants(variantResponses)
+                .build();
+    }
+
+
+    private ProductVariantResponse mapToVariantResponse(com.veo.backend.entity.ProductVariant variant) {
+        return ProductVariantResponse.builder()
+                .id(variant.getId())
+                .sku(variant.getSku())
+                .color(variant.getColor())
+                .size(variant.getSize())
+                .price(variant.getPrice())
+                .stockQuantity(variant.getStockQuantity())
+                .isActive(variant.getIsActive())
                 .build();
     }
 }
+

@@ -1,7 +1,11 @@
 -- Xóa DB cũ nếu có để làm lại cho sạch
 DROP DATABASE IF EXISTS eyewear_db;
-CREATE DATABASE eyewear_db;
+
+-- BẮT BUỘC: Ép Database dùng chuẩn chữ tiếng Việt Unicode
+CREATE DATABASE eyewear_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 USE eyewear_db;
+SET NAMES utf8mb4;
 
 -- =============================================
 -- 1. CORE SYSTEM & USERS
