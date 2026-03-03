@@ -227,8 +227,8 @@ INSERT INTO categories (name) VALUES ('Kính râm'), ('Gọng kính'), ('Kính t
 -- 1. USERS (Mật khẩu mặc định là: 123456 đã được băm BCrypt)
 -- role_id 1 = CUSTOMER, role_id 5 = ADMIN (Theo thứ tự INSERT của bạn)
 INSERT INTO users (role_id, email, password_hash, full_name, phone, is_active) VALUES
-(5, 'admin@veo.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1ipc9Glj/5K3b4H.', 'Admin Tối Cao', '0999999999', TRUE),
-(1, 'khach@veo.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1ipc9Glj/5K3b4H.', 'Khách Hàng VIP', '0888888888', TRUE);
+(5, 'admin@veo.com', '$2a$10$7clppnCzRAHln6wQnhBOruC3RoHZa022OjHafdqoHhr6LCbEqdkFa', 'Admin Tối Cao', '0999999999', TRUE), -- Admin123@
+(1, 'khach@veo.com', '$2a$10$dgyzLBvwjb7JVHn6ziFLtuTfKn.6awWC98Pld34sqP.lcOhIo1rXC', 'Khách Hàng VIP', '0888888888', TRUE); -- Customer123@
 
 -- 2. PRODUCTS (Sản phẩm số 1 bắt buộc có link 3D)
 -- category_id 1 = Kính râm, 2 = Gọng kính
