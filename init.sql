@@ -216,4 +216,31 @@ CREATE TABLE system_configs (
 INSERT INTO roles (name) VALUES ('CUSTOMER'), ('SALES'), ('OPERATIONS'), ('MANAGER'), ('ADMIN');
 INSERT INTO categories (name) VALUES ('Kính râm'), ('Gọng kính'), ('Kính trẻ em');
 
+-- =============================================
+-- DATA MẪU (MOCK DATA)
+-- =============================================
 
+-- 1. USERS (Mật khẩu mặc định là: 123456 đã được băm BCrypt)
+-- role_id 1 = CUSTOMER, role_id 5 = ADMIN (Theo thứ tự INSERT của bạn)
+INSERT INTO users (role_id, email, password_hash, full_name, phone, is_active) VALUES
+(5, 'admin@veo.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1ipc9Glj/5K3b4H.', 'Admin Tối Cao', '0999999999', TRUE),
+(1, 'khach@veo.com', '$2a$10$xn3LI/AjqicFYZFruSwve.681477XaVNaUQbr1ipc9Glj/5K3b4H.', 'Khách Hàng VIP', '0888888888', TRUE);
+
+-- 2. PRODUCTS (Sản phẩm số 1 bắt buộc có link 3D)
+-- category_id 1 = Kính râm, 2 = Gọng kính
+INSERT INTO products (category_id, name, brand, description, base_price, material, gender, model_3d_url, is_active) VALUES 
+(1, 'Kính Râm Phi Công Aviator 3D', 'RayBan', 'Kính râm dáng Aviator huyền thoại, hiển thị 3D cực mượt', 1500000, 'Kim loại', 'Unisex', 'https://res.cloudinary.com/dd5i9knw1/raw/upload/v1770184608/glasses_dlxgis.glb', TRUE),
+(2, 'Gọng Kính Tròn Vintage', 'Gentle Monster', 'Gọng nhựa dẻo thời trang Hàn Quốc (Không có 3D)', 850000, 'Nhựa TR90', 'Female', NULL, TRUE),
+(1, 'Kính Mát Thể Thao Oakley', 'Oakley', 'Kính ôm mặt chuyên đi phượt', 2100000, 'Nhựa', 'Male', NULL, TRUE);
+
+-- 3. PRODUCT_VARIANTS (Tồn kho để add vào giỏ hàng)
+INSERT INTO product_variants (product_id, sku, color, size, price, stock_quantity, is_active) VALUES 
+(1, 'RB-AVI-BLK-M', 'Đen Gót Vàng', 'M', 1500000, 50, TRUE),
+(1, 'RB-AVI-SLV-L', 'Bạc Tráng Gương', 'L', 1600000, 20, TRUE),
+(2, 'GM-VIN-TR-S', 'Trong Suốt', 'S', 850000, 100, TRUE),
+(3, 'OK-SPO-RD-M', 'Đỏ Đen', 'M', 2100000, 15, TRUE);
+
+-- 4. LENS_PRODUCTS (Một vài mẫu phôi tròng kính)
+INSERT INTO lens_products (name, type, refraction_index, description, price, is_active) VALUES 
+('Tròng chống ánh sáng xanh Chemi', 'Single', 1.56, 'Bảo vệ mắt khi dùng máy tính', 450000, TRUE),
+('Tròng siêu mỏng Hoya', 'Single', 1.67, 'Dành cho người cận nặng', 1200000, TRUE);
