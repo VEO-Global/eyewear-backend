@@ -218,33 +218,635 @@ CREATE TABLE system_configs (
 
 -- DATA MẪU CƠ BẢN
 INSERT INTO roles (name) VALUES ('CUSTOMER'), ('SALES'), ('OPERATIONS'), ('MANAGER'), ('ADMIN');
-INSERT INTO categories (name) VALUES ('Kính râm'), ('Gọng kính'), ('Kính trẻ em');
+INSERT INTO categories (name) VALUES ('Kính râm'), ('Gọng kính');
 
 -- =============================================
--- DATA MẪU (MOCK DATA)
+-- DATA 
 -- =============================================
-
--- 1. USERS (Mật khẩu mặc định là: 123456 đã được băm BCrypt)
--- role_id 1 = CUSTOMER, role_id 5 = ADMIN (Theo thứ tự INSERT của bạn)
-INSERT INTO users (role_id, email, password_hash, full_name, phone, is_active) VALUES
-(5, 'admin@veo.com', '$2a$10$7clppnCzRAHln6wQnhBOruC3RoHZa022OjHafdqoHhr6LCbEqdkFa', 'Admin Tối Cao', '0999999999', TRUE), -- Admin123@
-(1, 'khach@veo.com', '$2a$10$dgyzLBvwjb7JVHn6ziFLtuTfKn.6awWC98Pld34sqP.lcOhIo1rXC', 'Khách Hàng VIP', '0888888888', TRUE); -- Customer123@
-
--- 2. PRODUCTS (Sản phẩm số 1 bắt buộc có link 3D)
+-- 1. PRODUCTS (Sản phẩm bắt buộc có link 3D)
 -- category_id 1 = Kính râm, 2 = Gọng kính
-INSERT INTO products (category_id, name, brand, description, base_price, material, gender, model_3d_url, is_active) VALUES 
-(1, 'Kính Râm Phi Công Aviator 3D', 'RayBan', 'Kính râm dáng Aviator huyền thoại, hiển thị 3D cực mượt', 1500000, 'Kim loại', 'Unisex', 'https://res.cloudinary.com/dd5i9knw1/raw/upload/v1770184608/glasses_dlxgis.glb', TRUE),
-(2, 'Gọng Kính Tròn Vintage', 'Gentle Monster', 'Gọng nhựa dẻo thời trang Hàn Quốc (Không có 3D)', 850000, 'Nhựa TR90', 'Female', NULL, TRUE),
-(1, 'Kính Mát Thể Thao Oakley', 'Oakley', 'Kính ôm mặt chuyên đi phượt', 2100000, 'Nhựa', 'Male', NULL, TRUE);
+INSERT INTO products 
+(category_id, name, brand, description, base_price, material, gender, model_3d_url, is_active)
+VALUES
+(2,'Titanium Edge Pro','RayVision','Premium titanium frame',3200000,'Titanium','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260443/titanium_frame_glass_f1ffh9.glb',TRUE),
 
--- 3. PRODUCT_VARIANTS (Tồn kho để add vào giỏ hàng)
-INSERT INTO product_variants (product_id, sku, color, size, price, stock_quantity, is_active) VALUES 
-(1, 'RB-AVI-BLK-M', 'Đen Gót Vàng', 'M', 1500000, 50, TRUE),
-(1, 'RB-AVI-SLV-L', 'Bạc Tráng Gương', 'L', 1600000, 20, TRUE),
-(2, 'GM-VIN-TR-S', 'Trong Suốt', 'S', 850000, 100, TRUE),
-(3, 'OK-SPO-RD-M', 'Đỏ Đen', 'M', 2100000, 15, TRUE);
+(2,'Safety Shield RX','OptiSafe','Protective prescription glasses',2500000,'Polycarbonate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260366/safety_glasses_prescription_mkbtst.glb',TRUE),
 
--- 4. LENS_PRODUCTS (Một vài mẫu phôi tròng kính)
-INSERT INTO lens_products (name, type, refraction_index, description, price, is_active) VALUES 
-('Tròng chống ánh sáng xanh Chemi', 'Single', 1.56, 'Bảo vệ mắt khi dùng máy tính', 450000, TRUE),
-('Tròng siêu mỏng Hoya', 'Single', 1.67, 'Dành cho người cận nặng', 1200000, TRUE);
+(2,'Urban Classic 4','VistaWear','Modern casual frame',1800000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260353/glasses_4_tsxlvu.glb',TRUE),
+
+(2,'Minimal Frame 08','NeoOptic','Lightweight elegant frame',2100000,'Stainless Steel','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260352/glasses_08_ma8hbq.glb',TRUE),
+
+(2,'Retro Square 05','ClassicEyes','Vintage square design',1950000,'Acetate','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260348/glasses_05_eqqwbl.glb',TRUE),
+
+(2,'Modern Flex','VisionPro','Flexible TR90 frame',2300000,'TR90','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260346/glasses_jbal71.glb',TRUE),
+
+(2,'Wayfarer Legend','SunElite','Classic wayfarer style',2800000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260326/wayfarer_sunglasses_eyeglasses_rims_qe4yzv.glb',TRUE),
+
+(2,'Sleek Vision 07','Optima','Slim stylish design',1750000,'Metal','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260324/glasses_07_ml2zlr.glb',TRUE),
+
+(2,'Metro Style 3','VistaWear','Urban daily frame',1600000,'Plastic','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260259/glasses_3_lsyyec.glb',TRUE),
+
+(2,'Titanium AirLite','RayVision','Ultra light titanium',3500000,'Titanium','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260256/titanium_frame_glass_oegsdw.glb',TRUE),
+
+(1,'MetaQuest VR Glass','FutureSight','Smart VR eyewear frame',5200000,'Composite','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260211/oak_ley_metaquest_glasses_vr_oamqll.glb',TRUE),
+
+(2,'Rounded Rectangle Pro','UrbanEyes','Rounded rectangle frame',2000000,'Acetate','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260210/rounded_rectangle_eyeglasses_kfmklb.glb',TRUE),
+
+(2,'Moscot Zev Edition','HeritageOptic','Luxury handcrafted frame',4800000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260190/glasses_-_moscot_zev-tt_se_wjpswa.glb',TRUE),
+
+(2,'Classic Vision 2','OptiCore','Everyday basic frame',1500000,'Plastic','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260190/glasses_2_swgysz.glb',TRUE),
+
+(2,'RayBan Inspired','LuxView','Premium iconic design',4200000,'Metal','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260188/ray_ban_glasses_rrozi3.glb',TRUE),
+
+(2,'Crystal Clear Eye','ClearSight','Transparent acetate frame',1900000,'Acetate','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260182/glass_eye_m6yobl.glb',TRUE),
+
+(2,'Specs Classic','SpecWorld','Traditional full-rim frame',1700000,'Metal','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260179/eyewear_specs_cdzo8u.glb',TRUE),
+
+(2,'Aviator Steel','SkyVision','Aviator style frame',3100000,'Stainless Steel','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260178/aviator_glasses_i47nag.glb',TRUE),
+
+(2,'Rigel Frame','StarOptic','Premium lightweight frame',2600000,'TR90','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260164/glasses_rigel_bqekyu.glb',TRUE),
+
+(2,'Occhiali Milano','ItaliaEyes','Italian design frame',3900000,'Acetate','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260161/eyeglasses_-_occhiali_spakik.glb',TRUE),
+
+(2,'Elegant Line 09','NeoVision','Modern thin frame',2200000,'Metal','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260158/glasses_09_hdsqv7.glb',TRUE),
+
+(2,'A01 Urban','StreetOptic','Affordable fashion frame',1400000,'Plastic','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260155/eyeglasses_a01_mzv0g8.glb',TRUE),
+
+(2,'Black Classic','DarkVision','Matte black elegant frame',2000000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260138/black_eyeglasses_qfrtem.glb',TRUE);
+
+-- 2. PRODUCT_VARIANT
+-- SKU (10 ký tự) = [BR][SZ][CL][PID][RND]
+-- BR   : 2 ký tự viết tắt brand  
+-- SZ   : Size (S / M / L)  
+-- CL   : Color code  
+-- PID  : Product ID (2 số)  
+-- RND  : 4 ký tự random để tránh trùng
+INSERT INTO product_variants
+(product_id, sku, color, size, price, stock_quantity, expected_restock_date, is_active)
+VALUES
+
+-- 1 Titanium Edge Pro
+(1,'RVSB01A7K2','Black','S',3200000,10,'2026-04-15',TRUE),
+(1,'RVMB01F3L8','Black','M',3260000,9,'2026-04-20',TRUE),
+(1,'RVLB01D1Q4','Black','L',3290000,11,'2026-04-25',TRUE),
+(1,'RVSS01T2Z8','Silver','S',3200000,8,'2026-04-28',TRUE),
+(1,'RVMS01H4P6','Silver','M',3255000,10,'2026-05-01',TRUE),
+(1,'RVLS01K9W3','Silver','L',3285000,9,'2026-05-04',TRUE),
+
+-- 2 Safety Shield RX
+(2,'OSSC02J8P3','Clear','S',2500000,9,'2026-04-18',TRUE),
+(2,'OSMC02H4W6','Clear','M',2555000,11,'2026-04-21',TRUE),
+(2,'OSLC02K2X9','Clear','L',2590000,10,'2026-04-26',TRUE),
+
+-- 3 Urban Classic 4
+(3,'VWSB03T7A1','Black','S',1800000,8,'2026-04-18',TRUE),
+(3,'VWMB03R4C6','Black','M',1855000,12,'2026-04-22',TRUE),
+(3,'VWLB03P1Z7','Black','L',1890000,9,'2026-04-27',TRUE),
+(3,'VWST03M8Q2','Tortoise','S',1800000,10,'2026-04-30',TRUE),
+(3,'VWMT03J3W5','Tortoise','M',1860000,9,'2026-05-02',TRUE),
+(3,'VWLT03F1E9','Tortoise','L',1895000,11,'2026-05-06',TRUE),
+
+-- 4 Minimal Frame 08
+(4,'NOSG04B6N3','Gold','S',2100000,9,'2026-04-30',TRUE),
+(4,'NOMG04D2L5','Gold','M',2160000,8,'2026-05-05',TRUE),
+(4,'NOLG04F8R2','Gold','L',2190000,10,'2026-05-10',TRUE),
+
+-- 5 Retro Square 05
+(5,'CEST05H2A9','Tortoise','S',1950000,11,'2026-05-04',TRUE),
+(5,'CEMT05K4P1','Tortoise','M',2005000,9,'2026-05-07',TRUE),
+(5,'CELT05Q7W8','Tortoise','L',2040000,12,'2026-05-12',TRUE),
+
+-- 6 Modern Flex
+(6,'VPSB06K8J2','Black','S',2300000,10,'2026-05-01',TRUE),
+(6,'VPMB06D3H5','Black','M',2355000,9,'2026-05-04',TRUE),
+(6,'VPLB06L2Q8','Black','L',2390000,11,'2026-05-07',TRUE),
+
+-- 7 Wayfarer Legend
+(7,'SESB07A8M2','Black','S',2800000,9,'2026-05-02',TRUE),
+(7,'SEMB07H6L5','Black','M',2860000,10,'2026-05-06',TRUE),
+(7,'SELB07T2R9','Black','L',2895000,12,'2026-05-10',TRUE),
+(7,'SESG07Q1P4','Gold','S',2800000,8,'2026-05-12',TRUE),
+(7,'SEMG07J3F8','Gold','M',2855000,9,'2026-05-15',TRUE),
+(7,'SELG07Z7X1','Gold','L',2890000,11,'2026-05-18',TRUE),
+
+-- 8 Sleek Vision 07
+(8,'OPSS08B9L2','Silver','S',1750000,9,'2026-04-22',TRUE),
+(8,'OPMS08K3T6','Silver','M',1805000,8,'2026-04-25',TRUE),
+(8,'OPLS08D2Q1','Silver','L',1840000,11,'2026-04-29',TRUE),
+
+-- 9 Metro Style 3
+(9,'VWSB09T7L2','Black','S',1600000,10,'2026-04-20',TRUE),
+(9,'VWMB09P5C4','Black','M',1650000,12,'2026-04-23',TRUE),
+(9,'VWLB09Q2R8','Black','L',1690000,9,'2026-04-26',TRUE),
+
+-- 10 Titanium AirLite
+(10,'RVSS10A4L9','Silver','S',3500000,8,'2026-05-01',TRUE),
+(10,'RVMS10D7P3','Silver','M',3560000,10,'2026-05-05',TRUE),
+(10,'RVLS10F2Q7','Silver','L',3590000,11,'2026-05-09',TRUE),
+
+-- 11 MetaQuest VR Glass
+(11,'FSUB11H7Q2','Black','S',5200000,9,'2026-05-02',TRUE),
+(11,'FSUM11A3T5','Black','M',5260000,8,'2026-05-07',TRUE),
+(11,'FSUL11D9L1','Black','L',5295000,10,'2026-05-11',TRUE),
+
+-- 12 Rounded Rectangle Pro
+(12,'UESB12K4P3','Black','S',2000000,8,'2026-05-01',TRUE),
+(12,'UEMB12T9A5','Black','M',2055000,11,'2026-05-04',TRUE),
+(12,'UELB12R2C7','Black','L',2090000,10,'2026-05-08',TRUE),
+(12,'UESG12H7F2','Gold','S',2000000,9,'2026-05-11',TRUE),
+(12,'UEMG12P3Z6','Gold','M',2060000,8,'2026-05-14',TRUE),
+(12,'UELG12Q1X9','Gold','L',2095000,12,'2026-05-18',TRUE),
+
+-- 13 Moscot Zev Edition
+(13,'HOSB13L4K7','Black','S',4800000,9,'2026-05-03',TRUE),
+(13,'HOMB13A7Q1','Black','M',4860000,11,'2026-05-06',TRUE),
+(13,'HOLB13P9C4','Black','L',4890000,10,'2026-05-10',TRUE),
+
+-- 14 Classic Vision 2
+(14,'OCSB14M2T8','Black','S',1500000,8,'2026-04-21',TRUE),
+(14,'OCMB14H6D1','Black','M',1555000,9,'2026-04-24',TRUE),
+(14,'OCLB14F3Z5','Black','L',1590000,11,'2026-04-27',TRUE),
+(14,'OCSC14R7K2','Clear','S',1500000,10,'2026-04-29',TRUE),
+(14,'OCMC14J1L9','Clear','M',1560000,8,'2026-05-02',TRUE),
+(14,'OCLC14A8W3','Clear','L',1595000,12,'2026-05-05',TRUE),
+
+-- 15 RayBan Inspired
+(15,'LVSB15Q7M3','Black','S',4200000,11,'2026-05-01',TRUE),
+(15,'LVMB15A4C6','Black','M',4260000,10,'2026-05-04',TRUE),
+(15,'LVLB15P1X8','Black','L',4290000,9,'2026-05-08',TRUE),
+
+-- 16 Crystal Clear Eye
+(16,'CSSC16L8R1','Clear','S',1900000,9,'2026-04-20',TRUE),
+(16,'CSMC16K4D3','Clear','M',1955000,8,'2026-04-23',TRUE),
+(16,'CSLC16J9Q6','Clear','L',1990000,10,'2026-04-27',TRUE),
+(16,'CSSG16T2Z4','Gold','S',1900000,11,'2026-04-30',TRUE),
+(16,'CSMG16P3L7','Gold','M',1960000,9,'2026-05-03',TRUE),
+(16,'CSLG16F1A8','Gold','L',1995000,12,'2026-05-07',TRUE),
+
+-- 17 Specs Classic
+(17,'SWMB17T6K2','Metal','S',1700000,10,'2026-04-22',TRUE),
+(17,'SWMM17D8P4','Metal','M',1755000,9,'2026-04-25',TRUE),
+(17,'SWML17Q3X7','Metal','L',1790000,11,'2026-04-28',TRUE),
+
+-- 18 Aviator Steel
+(18,'SVSB18A5R2','Silver','S',3100000,8,'2026-05-02',TRUE),
+(18,'SVMB18H7D4','Silver','M',3160000,11,'2026-05-05',TRUE),
+(18,'SVLB18K2Z8','Silver','L',3190000,10,'2026-05-08',TRUE),
+(18,'SVSB18G1F6','Black','S',3100000,9,'2026-05-10',TRUE),
+(18,'SVMB18L9P3','Black','M',3155000,8,'2026-05-13',TRUE),
+(18,'SVLB18T4C1','Black','L',3185000,12,'2026-05-16',TRUE),
+
+-- 19 Rigel Frame
+(19,'SOSB19H4L8','Black','S',2600000,11,'2026-05-01',TRUE),
+(19,'SOMB19F7Q2','Black','M',2655000,10,'2026-05-04',TRUE),
+(19,'SOLB19A9D6','Black','L',2690000,9,'2026-05-07',TRUE),
+
+-- 20 Occhiali Milano
+(20,'IESB20K8R4','Black','S',3900000,9,'2026-05-02',TRUE),
+(20,'IEMB20T6P2','Black','M',3960000,8,'2026-05-05',TRUE),
+(20,'IELB20D3Q7','Black','L',3990000,11,'2026-05-08',TRUE),
+(20,'IESC20A1Z9','Clear','S',3900000,10,'2026-05-10',TRUE),
+(20,'IEMC20L4F3','Clear','M',3955000,9,'2026-05-13',TRUE),
+(20,'IELC20H7X5','Clear','L',3985000,12,'2026-05-17',TRUE),
+
+-- 21 Elegant Line 09
+(21,'NVSB21J6M3','Black','S',2200000,10,'2026-04-22',TRUE),
+(21,'NVMB21K2Q7','Black','M',2260000,9,'2026-04-25',TRUE),
+(21,'NVLB21F9P1','Black','L',2290000,8,'2026-04-29',TRUE),
+
+-- 22 A01 Urban
+(22,'STSB22L3T5','Black','S',1400000,11,'2026-04-18',TRUE),
+(22,'STMB22H6D2','Black','M',1455000,10,'2026-04-21',TRUE),
+(22,'STLB22Q1C9','Black','L',1490000,9,'2026-04-25',TRUE),
+(22,'STSS22A8F4','Silver','S',1400000,8,'2026-04-28',TRUE),
+(22,'STMS22R4K6','Silver','M',1460000,12,'2026-05-01',TRUE),
+(22,'STLS22Z7P3','Silver','L',1495000,10,'2026-05-04',TRUE),
+
+-- 23 Black Classic
+(23,'DVSB23M7Q1','Black','S',2000000,9,'2026-04-19',TRUE),
+(23,'DVMB23H3T4','Black','M',2055000,10,'2026-04-22',TRUE),
+(23,'DVLB23F8A6','Black','L',2090000,11,'2026-04-26',TRUE);
+
+-- . USERS
+INSERT INTO users
+(role_id, email, password_hash, full_name, phone, avatar_url, is_active, created_at)
+VALUES
+
+-- ===== 30 CUSTOMER (role_id = 1) =====
+(1,'nguyenminhanh@gmail.com','$2a$10$hash123','Nguyễn Minh Anh','0903847291','https://i.pravatar.cc/150?img=1',TRUE,'2025-09-14 10:21:33'),
+(1,'tranthikimngan@gmail.com','$2a$10$hash123','Trần Thị Kim Ngân','0916728453','https://i.pravatar.cc/150?img=2',TRUE,'2025-09-28 18:45:12'),
+(1,'levanthanh@gmail.com','$2a$10$hash123','Lê Văn Thành','0935281746','https://i.pravatar.cc/150?img=3',TRUE,'2025-10-03 09:11:07'),
+(1,'phamthuthao@gmail.com','$2a$10$hash123','Phạm Thu Thảo','0983175624','https://i.pravatar.cc/150?img=4',TRUE,'2025-10-19 14:36:55'),
+(1,'hoangminhduc@gmail.com','$2a$10$hash123','Hoàng Minh Đức','0972468135','https://i.pravatar.cc/150?img=5',TRUE,'2025-11-02 21:04:40'),
+(1,'dangngocanh@gmail.com','$2a$10$hash123','Đặng Ngọc Anh','0964827153','https://i.pravatar.cc/150?img=6',TRUE,'2025-11-17 11:25:18'),
+(1,'buitrungkien@gmail.com','$2a$10$hash123','Bùi Trung Kiên','0395728461','https://i.pravatar.cc/150?img=7',TRUE,'2025-12-06 16:02:29'),
+(1,'vothimy@gmail.com','$2a$10$hash123','Võ Thị My','0384617295','https://i.pravatar.cc/150?img=8',TRUE,'2025-12-22 20:41:06'),
+(1,'dinhquangvinh@gmail.com','$2a$10$hash123','Đinh Quang Vinh','0372846159','https://i.pravatar.cc/150?img=9',TRUE,'2026-01-08 08:14:52'),
+(1,'phanthanhphong@gmail.com','$2a$10$hash123','Phan Thành Phong','0365172948','https://i.pravatar.cc/150?img=10',TRUE,'2026-01-21 19:53:37'),
+(1,'nguyenthanhdat@gmail.com','$2a$10$hash123','Nguyễn Thành Đạt','0907153842','https://i.pravatar.cc/150?img=11',TRUE,'2026-02-05 12:18:44'),
+(1,'tranminhquan@gmail.com','$2a$10$hash123','Trần Minh Quân','0912847563','https://i.pravatar.cc/150?img=12',TRUE,'2026-02-18 17:26:11'),
+(1,'levanthien@gmail.com','$2a$10$hash123','Lê Văn Thiện','0926715834','https://i.pravatar.cc/150?img=13',TRUE,'2026-02-27 09:47:03'),
+(1,'phamducanh@gmail.com','$2a$10$hash123','Phạm Đức Anh','0934172685','https://i.pravatar.cc/150?img=14',TRUE,'2026-03-02 15:34:21'),
+(1,'hoangngocbao@gmail.com','$2a$10$hash123','Hoàng Ngọc Bảo','0965712846','https://i.pravatar.cc/150?img=15',TRUE,'2026-03-06 22:10:09'),
+(1,'nguyenthilan@gmail.com','$2a$10$hash123','Nguyễn Thị Lan','0973816524','https://i.pravatar.cc/150?img=16',TRUE,'2025-10-12 10:12:12'),
+(1,'tranthuytrang@gmail.com','$2a$10$hash123','Trần Thùy Trang','0986241753','https://i.pravatar.cc/150?img=17',TRUE,'2025-10-29 15:31:44'),
+(1,'phamminhtuan@gmail.com','$2a$10$hash123','Phạm Minh Tuấn','0391847265','https://i.pravatar.cc/150?img=18',TRUE,'2025-11-09 13:05:19'),
+(1,'levandung@gmail.com','$2a$10$hash123','Lê Văn Dũng','0385271946','https://i.pravatar.cc/150?img=19',TRUE,'2025-11-21 20:45:07'),
+(1,'dangthuyanh@gmail.com','$2a$10$hash123','Đặng Thùy Anh','0376928451','https://i.pravatar.cc/150?img=20',TRUE,'2025-12-04 08:22:33'),
+(1,'vominhchau@gmail.com','$2a$10$hash123','Võ Minh Châu','0368452173','https://i.pravatar.cc/150?img=21',TRUE,'2025-12-15 11:42:10'),
+(1,'buitrangan@gmail.com','$2a$10$hash123','Bùi Trà Ngân','0905274816','https://i.pravatar.cc/150?img=22',TRUE,'2026-01-04 18:55:29'),
+(1,'dinhthanhson@gmail.com','$2a$10$hash123','Đinh Thành Sơn','0916384725','https://i.pravatar.cc/150?img=23',TRUE,'2026-01-14 09:08:44'),
+(1,'hoangkimyen@gmail.com','$2a$10$hash123','Hoàng Kim Yến','0937481625','https://i.pravatar.cc/150?img=24',TRUE,'2026-01-29 21:11:13'),
+(1,'phamquynhchi@gmail.com','$2a$10$hash123','Phạm Quỳnh Chi','0964728513','https://i.pravatar.cc/150?img=25',TRUE,'2026-02-09 16:32:55'),
+(1,'tranvanloc@gmail.com','$2a$10$hash123','Trần Văn Lộc','0975263841','https://i.pravatar.cc/150?img=26',TRUE,'2026-02-16 14:28:41'),
+(1,'nguyenkimlien@gmail.com','$2a$10$hash123','Nguyễn Kim Liên','0987341625','https://i.pravatar.cc/150?img=27',TRUE,'2026-02-23 10:15:19'),
+(1,'levanphuc@gmail.com','$2a$10$hash123','Lê Văn Phúc','0396284715','https://i.pravatar.cc/150?img=28',TRUE,'2026-03-01 12:42:30'),
+(1,'dangngocmai@gmail.com','$2a$10$hash123','Đặng Ngọc Mai','0384716259','https://i.pravatar.cc/150?img=29',TRUE,'2026-03-05 19:05:44'),
+(1,'vothanhha@gmail.com','$2a$10$hash123','Võ Thanh Hà','0375148263','https://i.pravatar.cc/150?img=30',TRUE,'2026-03-07 17:20:55'),
+
+-- ===== SALES (role_id = 2) =====
+(2,'minhtuan.sales@gmail.com','$2a$10$hash123','Nguyễn Minh Tuấn','0908437261','https://i.pravatar.cc/150?img=31',TRUE,'2025-10-10 09:12:00'),
+(2,'thanhhang.sales@gmail.com','$2a$10$hash123','Trần Thanh Hằng','0917362548','https://i.pravatar.cc/150?img=32',TRUE,'2025-10-14 11:30:22'),
+(2,'quanghuy.sales@gmail.com','$2a$10$hash123','Phạm Quang Huy','0936281745','https://i.pravatar.cc/150?img=33',TRUE,'2025-11-01 15:22:33'),
+(2,'kimngan.sales@gmail.com','$2a$10$hash123','Lê Kim Ngân','0968152743','https://i.pravatar.cc/150?img=34',TRUE,'2025-11-18 17:44:11'),
+(2,'minhtri.sales@gmail.com','$2a$10$hash123','Võ Minh Trí','0973628451','https://i.pravatar.cc/150?img=35',TRUE,'2025-12-03 10:00:02'),
+(2,'anhthu.sales@gmail.com','$2a$10$hash123','Bùi Anh Thư','0982746153','https://i.pravatar.cc/150?img=36',TRUE,'2025-12-20 12:50:30'),
+(2,'thanhdat.sales@gmail.com','$2a$10$hash123','Đặng Thành Đạt','0395726148','https://i.pravatar.cc/150?img=37',TRUE,'2026-01-07 08:18:55'),
+(2,'ngocanh.sales@gmail.com','$2a$10$hash123','Hoàng Ngọc Anh','0384638152','https://i.pravatar.cc/150?img=38',TRUE,'2026-01-25 14:33:20'),
+(2,'minhchau.sales@gmail.com','$2a$10$hash123','Đinh Minh Châu','0378152463','https://i.pravatar.cc/150?img=39',TRUE,'2026-02-11 16:12:40'),
+(2,'thutrang.sales@gmail.com','$2a$10$hash123','Phan Thu Trang','0362748159','https://i.pravatar.cc/150?img=40',TRUE,'2026-02-26 09:41:17'),
+
+-- ===== OPERATIONS =====
+(3,'vanduc.operations@gmail.com','$2a$10$hash123','Lê Văn Đức','0903846257','https://i.pravatar.cc/150?img=41',TRUE,'2025-10-21 11:11:11'),
+(3,'kimyen.operations@gmail.com','$2a$10$hash123','Trần Kim Yến','0915273648','https://i.pravatar.cc/150?img=42',TRUE,'2025-11-13 16:22:18'),
+(3,'thanhson.operations@gmail.com','$2a$10$hash123','Nguyễn Thành Sơn','0936847251','https://i.pravatar.cc/150?img=43',TRUE,'2026-01-09 08:55:44'),
+(3,'ngocmai.operations@gmail.com','$2a$10$hash123','Phạm Ngọc Mai','0962846175','https://i.pravatar.cc/150?img=44',TRUE,'2026-02-20 13:10:30'),
+
+-- ===== MANAGER =====
+(4,'minhquan.manager@gmail.com','$2a$10$hash123','Trần Minh Quân','0973846251','https://i.pravatar.cc/150?img=45',TRUE,'2025-11-05 09:40:12'),
+(4,'thanhha.manager@gmail.com','$2a$10$hash123','Võ Thanh Hà','0982746351','https://i.pravatar.cc/150?img=46',TRUE,'2026-01-15 10:21:55'),
+(4,'quynhchi.manager@gmail.com','$2a$10$hash123','Phạm Quỳnh Chi','0395724618','https://i.pravatar.cc/150?img=47',TRUE,'2026-02-27 17:09:33'),
+
+-- ===== ADMIN =====
+(5,'admin.system@gmail.com','$2a$10$hash123','System Admin','0963847251','https://i.pravatar.cc/150?img=48',TRUE,'2025-09-10 08:00:00'),
+(5,'admin@veo.com', '$2a$10$7clppnCzRAHln6wQnhBOruC3RoHZa022OjHafdqoHhr6LCbEqdkFa', 'Admin Tối Cao', '0999999999', 'https://i.pravatar.cc/150?img=49', TRUE, null), -- Admin123@
+(1, 'khach@veo.com', '$2a$10$dgyzLBvwjb7JVHn6ziFLtuTfKn.6awWC98Pld34sqP.lcOhIo1rXC', 'Khách Hàng VIP', '0888888888', 'https://i.pravatar.cc/150?img=50', TRUE, null); -- Customer123@
+INSERT INTO carts (user_id, created_at) VALUES
+(1,'2026-03-01 09:10:00'),
+(2,'2026-03-01 10:15:00'),
+(3,'2026-03-02 08:20:00'),
+(4,'2026-03-02 10:40:00'),
+(5,'2026-03-02 13:10:00'),
+(6,'2026-03-03 07:10:00'),
+(7,'2026-03-03 09:30:00'),
+(8,'2026-03-03 12:15:00'),
+(9,'2026-03-03 15:30:00'),
+(10,'2026-03-04 08:05:00'),
+(11,'2026-03-04 09:45:00'),
+(12,'2026-03-04 10:55:00'),
+(13,'2026-03-04 12:05:00'),
+(14,'2026-03-04 13:25:00'),
+(15,'2026-03-04 15:10:00'),
+(16,'2026-03-05 08:05:00'),
+(17,'2026-03-05 09:40:00'),
+(18,'2026-03-05 11:55:00'),
+(19,'2026-03-05 13:20:00'),
+(20,'2026-03-05 15:10:00'),
+(21,'2026-03-06 08:20:00'),
+(22,'2026-03-06 09:30:00'),
+(23,'2026-03-06 10:40:00'),
+(24,'2026-03-06 12:10:00'),
+(25,'2026-03-07 08:05:00'),
+(26,'2026-03-07 09:20:00'),
+(27,'2026-03-07 10:30:00'),
+(28,'2026-03-07 11:50:00'),
+(29,'2026-03-07 14:40:00'),
+(30,'2026-03-07 16:20:00');
+
+-- LENS_PRODUCTS
+INSERT INTO lens_products
+(name, type, refraction_index, description, price, is_active)
+VALUES
+('Single Vision Lens','Vision Correction',1.50,'Basic lens correcting a single field of vision (near or far).',500000,TRUE),
+('Bifocal Lens','Vision Correction',1.50,'Lens with two optical powers for near and distance vision.',900000,TRUE),
+('Trifocal Lens','Vision Correction',1.50,'Lens providing three viewing zones: distance, intermediate and near.',1200000,TRUE),
+('Progressive Lens','Vision Correction',1.60,'No-line multifocal lens providing smooth transition between distances.',2500000,TRUE),
+('Photochromic Lens','Adaptive Lens',1.56,'Lens that darkens automatically under sunlight and clears indoors.',1800000,TRUE),
+('Polarized Lens','Sun Protection',1.56,'Lens reducing glare from reflective surfaces like water or roads.',1600000,TRUE),
+('Blue Light Blocking Lens','Digital Protection',1.56,'Lens designed to filter blue light from digital screens.',900000,TRUE),
+('High-Index Lens','Thin Lens',1.67,'Thinner and lighter lens suitable for high prescription.',2200000,TRUE),
+('Aspheric Lens','Optical Design',1.60,'Flatter lens design reducing distortion and improving appearance.',2000000,TRUE),
+('Anti-Reflective Lens','Lens Coating',1.50,'Lens with coating that reduces glare and reflections.',700000,TRUE),
+('Polycarbonate Lens','Impact Resistant',1.59,'Lightweight and highly impact-resistant lens.',1200000,TRUE),
+('Trivex Lens','Impact Resistant',1.53,'Advanced lightweight lens with excellent clarity and strength.',1500000,TRUE),
+('Scratch-Resistant Lens','Lens Coating',1.50,'Lens coated to resist surface scratches.',650000,TRUE),
+('UV Protection Lens','Protective Lens',1.50,'Lens blocking harmful ultraviolet radiation.',750000,TRUE),
+('Driving Lens','Special Purpose',1.56,'Lens optimized for driving with improved contrast and glare reduction.',1100000,TRUE),
+('Computer Lens','Special Purpose',1.56,'Lens designed for intermediate distance used with computers.',950000,TRUE),
+('Reading Lens','Vision Correction',1.50,'Lens optimized for near vision reading tasks.',600000,TRUE),
+('Safety Lens','Protective Lens',1.59,'Durable lens used in industrial safety glasses.',1300000,TRUE);
+
+INSERT INTO cart_items (cart_id, product_variant_id, lens_product_id, quantity) VALUES
+-- Cart 1 (PRESCRIPTION)
+(1,2,5,1),
+(1,7,3,1),
+-- Cart 2
+(2,4,6,1),
+-- Cart 3
+(3,6,7,1),
+(3,11,4,1),
+-- Cart 4
+(4,3,8,1),
+-- Cart 5
+(5,5,2,1),
+-- Cart 6
+(6,8,9,1),
+(6,14,3,1),
+-- Cart 7
+(7,10,5,1),
+-- Cart 8
+(8,13,10,1),
+-- Cart 9 (NORMAL)
+(9,16,NULL,1),
+-- Cart 10 (PRE_ORDER)
+(10,17,NULL,1),
+(10,9,NULL,1),
+-- Cart 11
+(11,19,11,1),
+-- Cart 12
+(12,20,8,1),
+-- Cart 13 (NORMAL)
+(13,23,NULL,1),
+-- Cart 14 (NORMAL)
+(14,6,NULL,1),
+-- Cart 15 (PRE_ORDER)
+(15,9,NULL,1),
+(15,14,NULL,1),
+-- Cart 16 (NORMAL)
+(16,5,NULL,1),
+-- Cart 17 (PRE_ORDER)
+(17,7,NULL,1),
+-- Cart 18 (PRE_ORDER)
+(18,12,NULL,1),
+-- Cart 19 (PRE_ORDER)
+(19,3,NULL,1),
+-- Cart 20 (NORMAL)
+(20,15,NULL,1),
+-- Cart 21 (PRESCRIPTION)
+(21,1,6,1),
+-- Cart 22
+(22,4,5,1),
+-- Cart 23
+(23,11,7,1),
+-- Cart 24
+(24,8,3,1),
+-- Cart 25
+(25,6,4,1),
+-- Cart 26 (NORMAL)
+(26,18,NULL,1),
+-- Cart 27 (PRE_ORDER)
+(27,13,NULL,1),
+-- Cart 28 (PRE_ORDER)
+(28,20,NULL,1),
+-- Cart 29 (NORMAL)
+(29,21,NULL,1),
+-- Cart 30 (NORMAL)
+(30,22,NULL,1);
+
+-- VOUCHERS
+INSERT INTO vouchers 
+(code, discount_percent, max_discount_amount, start_date, end_date, quantity, is_active)
+VALUES
+('WELCOME10', 10, 50000, '2026-03-01', '2026-12-31', 100, 1),
+('SUMMER15', 15, 80000, '2026-05-01', '2026-07-31', 50, 1),
+('FLASH20', 20, 100000, '2026-03-10', '2026-03-12', 30, 1),
+('NEWUSER25', 25, 120000, '2026-03-01', '2026-06-01', 200, 1),
+('VIP30', 30, 200000, '2026-04-01', '2026-12-31', 20, 1),
+('EXPIRED10', 10, 50000, '2025-10-01', '2025-12-31', 100, 0),
+('WEEKEND15', 15, 70000, '2026-03-14', '2026-03-15', 40, 1);
+
+-- USER_ADDRESSES
+INSERT INTO eyewear_db.user_addresses (user_id, address_line, city, district, is_default) VALUES
+-- User 1
+(1,'12 Nguyen Trai','Ho Chi Minh City','District 1',1),
+(1,'88 Le Thanh Ton','Ho Chi Minh City','District 1',0),
+-- User 2
+(2,'45 Le Loi','Ho Chi Minh City','District 1',1),
+(2,'120 Nguyen Hue','Ho Chi Minh City','District 1',0),
+(2,'15 Ton Duc Thang','Ho Chi Minh City','District 1',0),
+-- User 3
+(3,'78 Tran Hung Dao','Ho Chi Minh City','District 5',1),
+-- User 4
+(4,'102 Vo Van Tan','Ho Chi Minh City','District 3',1),
+(4,'55 Nguyen Dinh Chieu','Ho Chi Minh City','District 3',0),
+-- User 5
+(5,'56 Cach Mang Thang 8','Ho Chi Minh City','District 10',1),
+(5,'230 Ly Thuong Kiet','Ho Chi Minh City','District 10',0),
+-- User 6
+(6,'210 Nguyen Thi Minh Khai','Ho Chi Minh City','District 3',1),
+-- User 7
+(7,'15 Phan Xich Long','Ho Chi Minh City','Phu Nhuan',1),
+(7,'89 Hoa Lan','Ho Chi Minh City','Phu Nhuan',0),
+-- User 8
+(8,'88 Cong Hoa','Ho Chi Minh City','Tan Binh',1),
+(8,'150 Truong Chinh','Ho Chi Minh City','Tan Binh',0),
+(8,'12 Ba Van','Ho Chi Minh City','Tan Binh',0),
+-- User 9
+(9,'134 Le Van Sy','Ho Chi Minh City','Phu Nhuan',1),
+-- User 10
+(10,'320 Hoang Van Thu','Ho Chi Minh City','Tan Binh',1),
+(10,'42 Nguyen Trong Tuyen','Ho Chi Minh City','Phu Nhuan',0),
+-- User 11
+(11,'25 Nguyen Chi Thanh','Hanoi','Dong Da',1),
+(11,'80 Lang Ha','Hanoi','Dong Da',0),
+-- User 12
+(12,'90 Chua Boc','Hanoi','Dong Da',1),
+-- User 13
+(13,'12 Thai Ha','Hanoi','Dong Da',1),
+(13,'88 Tay Son','Hanoi','Dong Da',0),
+-- User 14
+(14,'75 Xuan Thuy','Hanoi','Cau Giay',1),
+(14,'22 Tran Thai Tong','Hanoi','Cau Giay',0),
+(14,'150 Cau Giay','Hanoi','Cau Giay',0),
+-- User 15
+(15,'50 Tran Duy Hung','Hanoi','Cau Giay',1),
+-- User 16
+(16,'102 Nguyen Khanh Toan','Hanoi','Cau Giay',1),
+(16,'35 Quan Hoa','Hanoi','Cau Giay',0),
+-- User 17
+(17,'8 Ba Trieu','Hanoi','Hai Ba Trung',1),
+-- User 18
+(18,'60 Minh Khai','Hanoi','Hai Ba Trung',1),
+(18,'210 Bach Mai','Hanoi','Hai Ba Trung',0),
+-- User 19
+(19,'11 Kim Ma','Hanoi','Ba Dinh',1),
+(19,'70 Giang Vo','Hanoi','Ba Dinh',0),
+-- User 20
+(20,'45 Dao Tan','Hanoi','Ba Dinh',1),
+-- User 21
+(21,'10 Bach Dang','Da Nang','Hai Chau',1),
+(21,'88 Hung Vuong','Da Nang','Hai Chau',0),
+-- User 22
+(22,'56 Nguyen Van Linh','Da Nang','Hai Chau',1),
+-- User 23
+(23,'77 Le Duan','Da Nang','Thanh Khe',1),
+(23,'150 Nguyen Tat Thanh','Da Nang','Thanh Khe',0),
+-- User 24
+(24,'90 Dien Bien Phu','Da Nang','Thanh Khe',1),
+-- User 25
+(25,'34 Ngo Quyen','Da Nang','Son Tra',1),
+(25,'88 Vo Nguyen Giap','Da Nang','Son Tra',0),
+-- User 26
+(26,'18 Ho Nghinh','Da Nang','Son Tra',1),
+-- User 27
+(27,'120 Ton Duc Thang','Da Nang','Lien Chieu',1),
+(27,'300 Nguyen Luong Bang','Da Nang','Lien Chieu',0),
+-- User 28
+(28,'55 Nguyen Tat Thanh','Da Nang','Lien Chieu',1),
+-- User 29
+(29,'200 Pham Van Dong','Da Nang','Son Tra',1),
+(29,'75 Vo Van Kiet','Da Nang','Son Tra',0),
+-- User 30
+(30,'66 Tran Phu','Da Nang','Hai Chau',1),
+(30,'15 Hai Phong','Da Nang','Hai Chau',0);
+
+-- SYSTEM_CONFIGS
+SELECT * FROM eyewear_db.system_configs;INSERT INTO eyewear_db.system_configs (config_key, config_value, description) VALUES
+-- Site
+('site.name','VisionCare Store','Tên website bán kính'),
+('site.email','support@visioncare.com','Email hỗ trợ khách hàng'),
+('site.phone','0909123456','Hotline chăm sóc khách hàng'),
+('site.currency','VND','Đơn vị tiền tệ hệ thống'),
+-- Shipping
+('shipping.base_fee','15000','Phí giao hàng cơ bản'),
+('shipping.fee_per_km','5000','Phí giao hàng mỗi km'),
+('shipping.min_fee','0','Phí giao hàng tối thiểu'),
+('shipping.max_fee','150000','Phí giao hàng tối đa'),
+('shipping.free_order_threshold','500000','Đơn hàng tối thiểu để miễn phí vận chuyển'),
+('shipping.free_distance_km','3','Khoảng cách miễn phí vận chuyển'),
+-- Cart
+('cart.max_items','20','Số lượng sản phẩm tối đa trong giỏ hàng'),
+-- Voucher
+('voucher.enabled','true','Cho phép sử dụng mã giảm giá'),
+('voucher.max_per_order','1','Số voucher tối đa mỗi đơn hàng'),
+-- Review
+('review.enabled','true','Cho phép khách hàng đánh giá sản phẩm'),
+('review.min_rating','1','Mức đánh giá tối thiểu'),
+-- Order
+('order.auto_cancel_hours','24','Tự động hủy đơn nếu chưa thanh toán sau số giờ quy định'),
+-- Payment
+('payment.cod_enabled','true','Cho phép thanh toán khi nhận hàng'),
+('payment.vnpay_enabled','true','Cho phép thanh toán qua VNPay'),
+-- Inventory
+('inventory.low_stock_threshold','5','Ngưỡng cảnh báo sắp hết hàng'),
+-- Return Policy
+('return.allowed_days','7','Số ngày cho phép đổi trả sản phẩm'),
+-- System
+('system.maintenance_mode','false','Bật/tắt chế độ bảo trì hệ thống'),
+-- Homepage
+('homepage.featured_products_limit','8','Số sản phẩm nổi bật hiển thị trang chủ');
+--  ORDER 
+INSERT INTO orders
+(user_id,status,order_type,total_amount,shipping_fee,discount_amount,
+shipping_address,phone_number,receiver_name,note,created_at,updated_at)
+VALUES
+(1,'COMPLETED','PRESCRIPTION',3250000,25000,50000,'12 Nguyen Trai, District 1','0903847291','Nguyễn Minh Anh','Please call before delivery','2026-03-01 10:00:00',NULL),
+(2,'COMPLETED','PRESCRIPTION',2600000,30000,0,'45 Le Loi, District 1','0916728453','Trần Thị Kim Ngân',NULL,'2026-03-01 11:00:00',NULL),
+(3,'SHIPPING','PRESCRIPTION',1855000,35000,0,'78 Tran Hung Dao, District 5','0935281746','Lê Văn Thành','Deliver after 6 PM','2026-03-02 09:00:00',NULL),
+(4,'SHIPPING','PRESCRIPTION',2160000,40000,100000,'102 Vo Van Tan, District 3','0983175624','Phạm Thu Thảo',NULL,'2026-03-02 11:30:00',NULL),
+(5,'MANUFACTURING','PRESCRIPTION',2005000,28000,0,'56 Cach Mang Thang 8, District 10','0972468135','Hoàng Minh Đức',NULL,'2026-03-02 14:20:00',NULL),
+(6,'MANUFACTURING','PRESCRIPTION',2355000,32000,0,'210 Nguyen Thi Minh Khai, District 3','0964827153','Đặng Ngọc Anh','Leave at reception desk','2026-03-03 08:00:00',NULL),
+(7,'MANUFACTURING','PRESCRIPTION',2860000,38000,150000,'15 Phan Xich Long, Phu Nhuan','0395728461','Bùi Trung Kiên',NULL,'2026-03-03 10:15:00',NULL),
+(8,'SHIPPING','PRESCRIPTION',1805000,26000,0,'88 Cong Hoa, Tan Binh','0384617295','Võ Thị My',NULL,'2026-03-03 13:20:00',NULL),
+(9,'COMPLETED','NORMAL',1650000,22000,50000,'134 Le Van Sy, Phu Nhuan','0372846159','Đinh Quang Vinh',NULL,'2026-03-03 16:10:00',NULL),
+(10,'COMPLETED','PRE_ORDER',3560000,45000,80000,'320 Hoang Van Thu, Tan Binh','0365172948','Phan Thành Phong','Call when arriving','2026-03-04 09:00:00',NULL),
+(11,'MANUFACTURING','PRESCRIPTION',5260000,60000,150000,'25 Nguyen Chi Thanh, Hanoi','0907153842','Nguyễn Thành Đạt',NULL,'2026-03-04 10:30:00',NULL),
+(12,'MANUFACTURING','PRESCRIPTION',2055000,55000,0,'90 Chua Boc, Hanoi','0912847563','Trần Minh Quân',NULL,'2026-03-04 11:50:00',NULL),
+(13,'SHIPPING','NORMAL',4860000,65000,100000,'12 Thai Ha, Hanoi','0926715834','Lê Văn Thiện',NULL,'2026-03-04 13:00:00',NULL),
+(14,'SHIPPING','NORMAL',1555000,52000,0,'75 Xuan Thuy, Hanoi','0934172685','Phạm Đức Anh',NULL,'2026-03-04 14:30:00',NULL),
+(15,'COMPLETED','PRE_ORDER',4260000,70000,80000,'50 Tran Duy Hung, Hanoi','0965712846','Hoàng Ngọc Bảo',NULL,'2026-03-04 16:10:00',NULL),
+(16,'COMPLETED','NORMAL',1955000,58000,50000,'102 Nguyen Khanh Toan, Hanoi','0973816524','Nguyễn Thị Lan','Ring the doorbell twice','2026-03-05 09:10:00',NULL),
+(17,'MANUFACTURING','PRE_ORDER',1755000,54000,0,'8 Ba Trieu, Hanoi','0986241753','Trần Thùy Trang',NULL,'2026-03-05 10:30:00',NULL),
+(18,'SHIPPING','PRE_ORDER',3160000,62000,70000,'60 Minh Khai, Hanoi','0391847265','Phạm Minh Tuấn',NULL,'2026-03-05 12:40:00',NULL),
+(19,'WAITING_FOR_STOCK','PRE_ORDER',2655000,50000,0,'11 Kim Ma, Hanoi','0385271946','Lê Văn Dũng',NULL,'2026-03-05 14:00:00',NULL),
+(20,'PENDING_PAYMENT','NORMAL',3960000,57000,100000,'45 Dao Tan, Hanoi','0376928451','Đặng Thùy Anh',NULL,'2026-03-05 16:00:00',NULL),
+(21,'PENDING_VERIFICATION','PRESCRIPTION',2260000,48000,0,'10 Bach Dang, Da Nang','0368452173','Võ Minh Châu',NULL,'2026-03-06 09:10:00',NULL),
+(22,'PENDING_VERIFICATION','PRESCRIPTION',1455000,46000,50000,'56 Nguyen Van Linh, Da Nang','0905274816','Bùi Trà Ngân','Please pack carefully','2026-03-06 10:20:00',NULL),
+(23,'PENDING_VERIFICATION','PRESCRIPTION',2090000,52000,0,'77 Le Duan, Da Nang','0916384725','Đinh Thành Sơn',NULL,'2026-03-06 11:30:00',NULL),
+(24,'PENDING_VERIFICATION','PRESCRIPTION',1650000,47000,0,'90 Dien Bien Phu, Da Nang','0937481625','Hoàng Kim Yến',NULL,'2026-03-06 13:10:00',NULL),
+(25,'MANUFACTURING','PRESCRIPTION',1955000,49000,50000,'34 Ngo Quyen, Da Nang','0964728513','Phạm Quỳnh Chi',NULL,'2026-03-07 09:00:00',NULL),
+(26,'SHIPPING','NORMAL',2655000,53000,0,'18 Ho Nghinh, Da Nang','0975263841','Trần Văn Lộc',NULL,'2026-03-07 10:20:00',NULL),
+(27,'SHIPPING','PRE_ORDER',1755000,51000,80000,'120 Ton Duc Thang, Da Nang','0987341625','Nguyễn Kim Liên',NULL,'2026-03-07 11:40:00',NULL),
+(28,'WAITING_FOR_STOCK','PRE_ORDER',3560000,56000,0,'55 Nguyen Tat Thanh, Da Nang','0396284715','Lê Văn Phúc',NULL,'2026-03-07 13:00:00',NULL),
+(29,'COMPLETED','NORMAL',2055000,50000,50000,'200 Pham Van Dong, Da Nang','0384716259','Đặng Ngọc Mai',NULL,'2026-03-07 15:20:00',NULL),
+(30,'PENDING_PAYMENT','NORMAL',2290000,54000,0,'66 Tran Phu, Da Nang','0375148263','Võ Thanh Hà','Customer will pay on delivery','2026-03-07 17:10:00',NULL);
+
+-- PRESCRIPTIONS
+INSERT INTO prescriptions (order_id,prescription_image_url,sphere_od,sphere_os,cylinder_od,cylinder_os,axis_od,axis_os,pd,verified_by,verified_at,staff_note) VALUES
+(1,'prescriptions/p1.jpg',-1.25,-1.50,-0.50,-0.75,90,85,62,4,'2026-03-08 09:00:00','Độ cận ổn định'),
+(2,'prescriptions/p2.jpg',-2.00,-2.25,-0.75,-0.50,80,95,63,4,'2026-03-08 09:05:00',NULL),
+(3,'prescriptions/p3.jpg',-0.75,-1.00,0.00,-0.25,0,70,61,4,'2026-03-08 09:10:00',NULL),
+(4,'prescriptions/p4.jpg',-3.25,-3.00,-1.00,-0.75,95,90,64,4,'2026-03-08 09:15:00',NULL),
+(5,'prescriptions/p5.jpg',-1.50,-1.75,-0.50,-0.50,85,88,62,4,'2026-03-08 09:20:00','Có loạn nhẹ'),
+(6,'prescriptions/p6.jpg',-2.75,-2.50,-1.25,-1.00,92,87,63,4,'2026-03-08 09:25:00',NULL),
+(7,'prescriptions/p7.jpg',-0.50,-0.75,0.00,-0.25,0,75,61,4,'2026-03-08 09:30:00',NULL),
+(8,'prescriptions/p8.jpg',-4.00,-3.75,-1.50,-1.25,100,95,64,4,'2026-03-08 09:35:00',NULL),
+(9,'prescriptions/p9.jpg',-1.00,-1.25,-0.25,-0.50,80,85,62,4,'2026-03-08 09:40:00',NULL),
+(10,'prescriptions/p10.jpg',-2.25,-2.00,-0.75,-0.75,90,90,63,4,'2026-03-08 09:45:00',NULL),
+(11,'prescriptions/p11.jpg',-3.50,-3.75,-1.00,-1.25,85,92,65,4,'2026-03-08 09:50:00','Khuyến nghị tròng chiết suất cao'),
+(12,'prescriptions/p12.jpg',-0.75,-0.75,0.00,0.00,0,0,60,4,'2026-03-08 09:55:00',NULL),
+(13,'prescriptions/p13.jpg',-1.25,-1.00,-0.50,-0.50,95,100,62,4,'2026-03-08 10:00:00',NULL),
+(14,'prescriptions/p14.jpg',-2.50,-2.75,-0.75,-1.00,88,90,64,4,'2026-03-08 10:05:00',NULL),
+(15,'prescriptions/p15.jpg',-1.75,-2.00,-0.50,-0.75,80,85,63,4,'2026-03-08 10:10:00','PD hơi lệch nhẹ'),
+(16,'prescriptions/p16.jpg',-3.00,-3.25,-1.00,-1.00,90,95,64,4,'2026-03-08 10:15:00',NULL),
+(17,'prescriptions/p17.jpg',-0.25,-0.50,0.00,-0.25,0,80,60,4,'2026-03-08 10:20:00',NULL),
+(18,'prescriptions/p18.jpg',-4.25,-4.00,-1.75,-1.50,100,105,65,4,'2026-03-08 10:25:00',NULL),
+(19,'prescriptions/p19.jpg',-1.50,-1.25,-0.50,-0.50,90,92,62,4,'2026-03-08 10:30:00','Khách dùng máy tính nhiều'),
+(20,'prescriptions/p20.jpg',-2.00,-2.25,-0.75,-0.75,85,88,63,4,'2026-03-08 10:35:00',NULL),
+(21,'prescriptions/p21.jpg',-3.75,-3.50,-1.25,-1.00,95,90,64,NULL,NULL,NULL),
+(22,'prescriptions/p22.jpg',-1.00,-0.75,0.00,-0.25,0,70,61,NULL,NULL,NULL),
+(23,'prescriptions/p23.jpg',-1.25,-1.50,-0.50,-0.75,88,90,62,NULL,NULL,NULL),
+(24,'prescriptions/p24.jpg',-2.75,-3.00,-1.00,-1.00,92,95,64,NULL,NULL,NULL),
+(25,'prescriptions/p25.jpg',-1.00,-1.25,-0.25,-0.50,80,85,62,4,'2026-03-08 10:40:00',NULL),
+(26,'prescriptions/p26.jpg',-3.25,-3.50,-1.25,-1.00,95,90,65,4,'2026-03-08 10:45:00',NULL),
+(27,'prescriptions/p27.jpg',-0.75,-0.50,0.00,-0.25,0,75,61,4,'2026-03-08 10:50:00',NULL),
+(28,'prescriptions/p28.jpg',-4.50,-4.25,-1.75,-1.50,105,100,66,4,'2026-03-08 10:55:00',NULL),
+(29,'prescriptions/p29.jpg',-1.50,-1.75,-0.50,-0.75,90,92,63,4,'2026-03-08 11:00:00',NULL),
+(30,'prescriptions/p30.jpg',-2.25,-2.50,-0.75,-1.00,85,88,64,4,'2026-03-08 11:05:00',NULL);
+
+-- ORDER_ITEMS
+INSERT INTO order_items
+(order_id, product_variant_id, lens_product_id, quantity, price)
+VALUES
+(1,2,1,1,3760000),
+(2,8,1,1,3055000),
+(3,11,1,1,2355000),
+(4,17,1,1,2660000),
+(5,20,1,1,2505000),
+(6,23,1,1,2855000),
+(7,26,1,1,3360000),
+(8,32,1,1,2305000),
+(9,35,NULL,1,1650000),
+(10,38,NULL,1,3560000),
+(11,41,4,1,7760000),
+(12,44,1,1,2555000),
+(13,47,NULL,1,4860000),
+(14,50,NULL,1,1555000),
+(15,53,NULL,1,4260000),
+(16,56,NULL,1,1955000),
+(17,59,NULL,1,1755000),
+(18,62,NULL,1,3160000),
+(19,65,NULL,1,2655000),
+(20,68,NULL,1,3960000),
+(21,71,1,1,2760000),
+(22,74,1,1,1955000),
+(23,77,1,1,2590000),
+(24,80,1,1,2150000),
+(25,20,1,1,2505000),
+(26,65,NULL,1,2655000),
+(27,35,NULL,1,1650000),
+(28,38,NULL,1,3560000),
+(29,44,NULL,1,2055000),
+(30,71,NULL,1,2290000);
+-- 1. CART_ITEMS
+-- 1. CART_ITEMS
