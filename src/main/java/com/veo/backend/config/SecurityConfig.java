@@ -34,7 +34,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 1. NHỮNG API PUBLIC (Ai cũng vào được, không cần Token)
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/variants/**", "/api/categories").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/variants/**", "/api/categories", "/api/orders").permitAll()
 
                         // 2. CHỈ USER HOẶC ADMIN (Cần đăng nhập) mới xem được Profile
                         .requestMatchers(HttpMethod.GET, "/api/user/profile").hasAnyRole("CUSTOMER", "ADMIN")

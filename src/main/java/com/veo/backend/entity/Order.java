@@ -1,5 +1,7 @@
 package com.veo.backend.entity;
 
+import com.veo.backend.enums.OrderStatus;
+import com.veo.backend.enums.OrderType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -25,9 +27,11 @@ public class Order {
     @JoinColumn(name = "user_id")
     private User user;
 
-    private String status;      // PENDING_PAYMENT, SHIPPING...
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status;      // PENDING_PAYMENT, SHIPPING...
 
-    private String orderType;   // NORMAL, PRE_ORDER
+    @Enumerated(EnumType.STRING)
+    private OrderType orderType;   // NORMAL, PRE_ORDER, PRESCRIPTION
 
     private BigDecimal totalAmount;
 
