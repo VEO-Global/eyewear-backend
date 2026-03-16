@@ -485,12 +485,8 @@ VALUES
 -- ===== MANAGER =====
 (4,'minhquan.manager@gmail.com','$2a$10$hash123','Trần Minh Quân','0973846251','https://i.pravatar.cc/150?img=45',TRUE,'2025-11-05 09:40:12'),
 (4,'thanhha.manager@gmail.com','$2a$10$hash123','Võ Thanh Hà','0982746351','https://i.pravatar.cc/150?img=46',TRUE,'2026-01-15 10:21:55'),
-(4,'quynhchi.manager@gmail.com','$2a$10$hash123','Phạm Quỳnh Chi','0395724618','https://i.pravatar.cc/150?img=47',TRUE,'2026-02-27 17:09:33'),
+(4,'quynhchi.manager@gmail.com','$2a$10$hash123','Phạm Quỳnh Chi','0395724618','https://i.pravatar.cc/150?img=47',TRUE,'2026-02-27 17:09:33');
 
--- ===== ADMIN =====
-(5,'admin.system@gmail.com','$2a$10$hash123','System Admin','0963847251','https://i.pravatar.cc/150?img=48',TRUE,'2025-09-10 08:00:00'),
-(5,'admin@veo.com', '$2a$10$7clppnCzRAHln6wQnhBOruC3RoHZa022OjHafdqoHhr6LCbEqdkFa', 'Admin Tối Cao', '0999999999', 'https://i.pravatar.cc/150?img=49', TRUE, null), -- Admin123@
-(1, 'khach@veo.com', '$2a$10$dgyzLBvwjb7JVHn6ziFLtuTfKn.6awWC98Pld34sqP.lcOhIo1rXC', 'Khách Hàng VIP', '0888888888', 'https://i.pravatar.cc/150?img=50', TRUE, null); -- Customer123@
 INSERT INTO carts (user_id, created_at) VALUES
 (1,'2026-03-01 09:10:00'),
 (2,'2026-03-01 10:15:00'),
