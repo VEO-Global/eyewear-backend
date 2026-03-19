@@ -10,4 +10,10 @@ public interface CategoryService {
     List<Category> getAllCategories();
 
     CategoryResponse createCategory(CategoryRequest request);
+
+    CategoryResponse getCategoryById(Long id);
+
+    void deleteCategory(Long id);
+
+    CategoryResponse updateCategory(Long id, CategoryRequest request);
 }
