@@ -850,5 +850,37 @@ VALUES
 (28,38,NULL,1,3560000),
 (29,44,NULL,1,2055000),
 (30,71,NULL,1,2290000);
--- 1. CART_ITEMS
+
+-- PAYMENTS
+INSERT INTO payments (id, order_id, method, status, amount, transaction_code, payment_proof_img, paid_at) VALUES
+(1, 1, 'MOMO', 'PAID', 3250000.00, 'TXN0001', 'payments/p1.jpg', '2026-03-01 10:15:00'),
+(2, 2, 'BANK_TRANSFER', 'PAID', 2600000.00, 'TXN0002', 'payments/p2.jpg', '2026-03-01 11:20:00'),
+(3, 3, 'MOMO', 'PAID', 1855000.00, 'TXN0003', 'payments/p3.jpg', '2026-03-02 09:20:00'),
+(4, 4, 'BANK_TRANSFER', 'PAID', 2160000.00, 'TXN0004', 'payments/p4.jpg', '2026-03-02 11:50:00'),
+(5, 5, 'MOMO', 'PAID', 2005000.00, 'TXN0005', 'payments/p5.jpg', '2026-03-02 14:40:00'),
+(6, 6, 'BANK_TRANSFER', 'PAID', 2355000.00, 'TXN0006', 'payments/p6.jpg', '2026-03-03 08:20:00'),
+(7, 7, 'MOMO', 'PAID', 2860000.00, 'TXN0007', 'payments/p7.jpg', '2026-03-03 10:40:00'),
+(8, 8, 'BANK_TRANSFER', 'PAID', 1805000.00, 'TXN0008', 'payments/p8.jpg', '2026-03-03 13:40:00'),
+(9, 9, 'MOMO', 'PAID', 1650000.00, 'TXN0009', 'payments/p9.jpg', '2026-03-03 16:30:00'),
+(10, 10, 'BANK_TRANSFER', 'PAID', 3560000.00, 'TXN0010', 'payments/p10.jpg', '2026-03-04 09:20:00'),
+(11, 11, 'MOMO', 'PAID', 5260000.00, 'TXN0011', 'payments/p11.jpg', '2026-03-04 10:50:00'),
+(12, 12, 'BANK_TRANSFER', 'PAID', 2055000.00, 'TXN0012', 'payments/p12.jpg', '2026-03-04 12:10:00'),
+(13, 13, 'MOMO', 'PAID', 4860000.00, 'TXN0013', 'payments/p13.jpg', '2026-03-04 13:20:00'),
+(14, 14, 'BANK_TRANSFER', 'PAID', 1555000.00, 'TXN0014', 'payments/p14.jpg', '2026-03-04 14:50:00'),
+(15, 15, 'MOMO', 'PAID', 4260000.00, 'TXN0015', 'payments/p15.jpg', '2026-03-04 16:30:00'),
+(16, 16, 'BANK_TRANSFER', 'PAID', 1955000.00, 'TXN0016', 'payments/p16.jpg', '2026-03-05 09:30:00'),
+(17, 17, 'MOMO', 'PAID', 1755000.00, 'TXN0017', 'payments/p17.jpg', '2026-03-05 10:50:00'),
+(18, 18, 'BANK_TRANSFER', 'PAID', 3160000.00, 'TXN0018', 'payments/p18.jpg', '2026-03-05 13:00:00'),
+(19, 19, 'MOMO', 'PAID', 2655000.00, 'TXN0019', 'payments/p19.jpg', '2026-03-05 14:20:00'),
+(20, 20, 'COD', 'UNPAID', 3960000.00, NULL, NULL, NULL),
+(21, 21, 'COD', 'UNPAID', 2260000.00, NULL, NULL, NULL),
+(22, 22, 'COD', 'UNPAID', 1455000.00, NULL, NULL, NULL),
+(23, 23, 'COD', 'UNPAID', 2090000.00, NULL, NULL, NULL),
+(24, 24, 'COD', 'UNPAID', 1650000.00, NULL, NULL, NULL),
+(25, 25, 'MOMO', 'PAID', 1955000.00, 'TXN0025', 'payments/p25.jpg', '2026-03-07 09:20:00'),
+(26, 26, 'BANK_TRANSFER', 'PAID', 2655000.00, 'TXN0026', 'payments/p26.jpg', '2026-03-07 10:40:00'),
+(27, 27, 'MOMO', 'PAID', 1755000.00, 'TXN0027', 'payments/p27.jpg', '2026-03-07 12:00:00'),
+(28, 28, 'BANK_TRANSFER', 'PAID', 3560000.00, 'TXN0028', 'payments/p28.jpg', '2026-03-07 13:20:00'),
+(29, 29, 'MOMO', 'PAID', 2055000.00, 'TXN0029', 'payments/p29.jpg', '2026-03-07 15:40:00'),
+(30, 30, 'COD', 'UNPAID', 2290000.00, NULL, NULL, NULL);
 -- 1. CART_ITEMS
