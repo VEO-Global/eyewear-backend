@@ -33,28 +33,32 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.cors(Customizer.withDefaults()) // Đọc cấu hình CORS từ bean bên dưới
+        http.cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(s ->
                         s.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
+                        // 1. DÒNG SINH TỬ CHO SWAGGER (BẮT BUỘC PHẢI CÓ)
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/variants/**", "/api/categories", "/api/orders").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/user/profile").hasAnyRole("CUSTOMER", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/variants/**", "/api/categories", "/api/user").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/products/**", "/api/variants/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/variants/**", "/api/user/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/user/profile", "/api/products/**", "/api/variants/**", "/api/categories/**", "/api/orders/**", "/api/lens_products/**").permitAll()
 
-                        // 2. QUYỀN CỦA MANAGER (Thêm/Sửa/Xóa sản phẩm)
+                        // 2. NHỮNG API PUBLIC CHO CUSTOMER
+                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/variants/**", "/api/categories/**", "/api/orders/**", "/api/lens_products/**").permitAll()
+
+                        // 3. XEM PROFILE (CẦN LOGIN)
+                        .requestMatchers(HttpMethod.GET, "/api/user/profile").hasAnyRole("CUSTOMER", "ADMIN", "MANAGER")
+
+                        // 4. QUYỀN CỦA MANAGER (QUẢN LÝ SẢN PHẨM)
                         .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/variants/**", "/api/lens_products/**", "/api/categories").hasRole("MANAGER")
                         .requestMatchers(HttpMethod.PUT, "/api/products/**", "/api/variants/**", "/api/lens_products/**", "/api/categories/**").hasRole("MANAGER")
                         .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/variants/**", "/api/lens_products/**", "/api/categories/**").hasRole("MANAGER")
 
-                        // 3. QUYỀN CỦA ADMIN
+                        // 5. QUYỀN CỦA ADMIN (QUẢN LÝ USER)
                         .requestMatchers("/api/user/**").hasRole("ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
@@ -65,7 +69,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // TÍCH HỢP CORS TRỰC TIẾP VÀO SECURITY
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
