@@ -40,9 +40,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/user/profile").hasAnyRole("CUSTOMER", "ADMIN")
 
                         // 3. QUYỀN CỦA ADMIN (Thêm/Sửa/Xóa sản phẩm)
-                        .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/variants/**", "/api/categories").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/variants/**", "/api/categories", "/api/user").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/products/**", "/api/variants/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/variants/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/variants/**", "/api/user/**").hasRole("ADMIN")
                         .requestMatchers("/api/user/**").hasRole("ADMIN")
 
                         // 4. Các request khác phải đăng nhập
