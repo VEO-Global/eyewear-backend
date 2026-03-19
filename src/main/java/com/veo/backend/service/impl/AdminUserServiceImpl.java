@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class AdminUserServiceImpl implements AdminUserService {
@@ -37,14 +39,19 @@ public class AdminUserServiceImpl implements AdminUserService {
         user.setEmail(request.getEmail());
         user.setFullName(request.getFullName());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        user.setPhone(request.getPhone());
+        user.setAvatarUrl(null);
         user.setRole(role);
         user.setIsActive(true);
+        user.setCreatedAt(LocalDateTime.now());
         userRepository.save(user);
 
         return UserCreateResponse.builder()
                 .id(user.getId())
                 .email(user.getEmail())
                 .fullName(user.getFullName())
+                .phone(user.getPhone())
+                .avatarUrl(user.getAvatarUrl())
                 .role(role.getName())
                 .isActive(user.getIsActive())
                 .build();
