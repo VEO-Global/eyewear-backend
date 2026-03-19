@@ -14,5 +14,9 @@ public class UserCreateResponse {
 
     private String role;
 
+    private String phone;
+
+    private String avatarUrl;
+
     private Boolean isActive;
 }
