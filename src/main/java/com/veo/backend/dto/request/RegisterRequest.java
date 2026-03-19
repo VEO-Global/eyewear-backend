@@ -23,10 +23,7 @@ public class RegisterRequest {
             message = "Password must have at least 8 characters, one uppercase, one lowercase and one special character"
     )
     private String password;
-
-    @NotBlank(message = "Confirm password is required")
-    private String confirmPassword;
-
+    
     @NotBlank(message = "Full name is required")
     private String fullName;
 

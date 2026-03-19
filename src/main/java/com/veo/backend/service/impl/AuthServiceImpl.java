@@ -65,12 +65,6 @@ public class AuthServiceImpl implements AuthService {
             );
         }
 
-        if(!registerRequest.getPassword().equals(registerRequest.getConfirmPassword())){
-            throw new AppException(
-                    ErrorCode.CONFIRM_PASSWORD_NOT_MATCH,
-                    "Password and confirm password do not match"
-            );
-        }
 
         User user = User.builder()
                 .email(registerRequest.getEmail())
