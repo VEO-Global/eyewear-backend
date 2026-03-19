@@ -37,9 +37,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/user/profile", "/api/products/**", "/api/variants/**", "/api/categories/**", "/api/orders/**", "/api/lens_products/**").permitAll()
 
                         // 2. QUYỀN CỦA MANAGER (Thêm/Sửa/Xóa sản phẩm)
-                        .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/variants/**", "/api/categories").hasRole("MANAGER")
-                        .requestMatchers(HttpMethod.PUT, "/api/products/**", "/api/variants/**", "/api/lens_products/**").hasRole("MANAGER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/variants/**", "/api/user/**", "/api/lens_products/**").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/variants/**", "/api/lens_products/**", "/api/categories").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**", "/api/variants/**", "/api/lens_products/**", "/api/categories/**").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/variants/**", "/api/lens_products/**", "/api/categories/**").hasRole("MANAGER")
 
                         // 3. QUYỀN CỦA ADMIN
                         .requestMatchers("/api/user/**").hasRole("ADMIN")
