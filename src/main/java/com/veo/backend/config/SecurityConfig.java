@@ -34,15 +34,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 1. NHỮNG API PUBLIC (Ai cũng vào được, không cần Token)
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/variants/**", "/api/categories", "/api/orders").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/user/profile", "/api/products/**", "/api/variants/**", "/api/categories/**", "/api/orders/**", "/api/lens_products/**").permitAll()
 
-                        // 2. CHỈ USER HOẶC ADMIN (Cần đăng nhập) mới xem được Profile
-                        .requestMatchers(HttpMethod.GET, "/api/user/profile").hasAnyRole("CUSTOMER", "ADMIN")
+                        // 2. QUYỀN CỦA MANAGER (Thêm/Sửa/Xóa sản phẩm)
+                        .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/variants/**", "/api/categories").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**", "/api/variants/**", "/api/lens_products/**").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/variants/**", "/api/user/**", "/api/lens_products/**").hasRole("MANAGER")
 
-                        // 3. QUYỀN CỦA ADMIN (Thêm/Sửa/Xóa sản phẩm)
-                        .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/variants/**", "/api/categories", "/api/user").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/products/**", "/api/variants/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/variants/**", "/api/user/**").hasRole("ADMIN")
+                        // 3. QUYỀN CỦA ADMIN
                         .requestMatchers("/api/user/**").hasRole("ADMIN")
 
                         // 4. Các request khác phải đăng nhập
