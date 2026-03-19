@@ -13,6 +13,7 @@ import com.veo.backend.repository.*;
 import com.veo.backend.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -30,6 +31,7 @@ public class OrderServiceImpl implements OrderService {
     private final PrescriptionRepository prescriptionRepository;
 
     @Override
+    @Transactional
     public OrderCreateResponse createOrder(String email, OrderCreateRequest request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND, "User not found"));
@@ -62,6 +64,7 @@ public class OrderServiceImpl implements OrderService {
                 }
 
                 variant.setStockQuantity(variant.getStockQuantity() - quantity);
+                variantRepository.save(variant);
             }
 
             BigDecimal itemPrice = variant.getPrice();
@@ -90,7 +93,20 @@ public class OrderServiceImpl implements OrderService {
                         ? OrderStatus.PENDING_VERIFICATION
                         : OrderStatus.PENDING_PAYMENT
         );
-        order.setShippingAddress(request.getShippingAddress());
+
+        // Build normalized shipping address with duplicate suppression
+        String builtAddress = buildNormalizedAddress(
+                request.getAddressDetail(),
+                request.getWard(),
+                request.getDistrict(),
+                request.getProvince()
+        );
+
+        order.setShippingAddress(builtAddress);
+        order.setProvince(request.getProvince());
+        order.setDistrict(request.getDistrict());
+        order.setWard(request.getWard());
+        order.setAddressDetail(request.getAddressDetail());
         order.setPhoneNumber(request.getPhoneNumber());
         order.setReceiverName(request.getReceiverName());
         order.setNote(request.getNote());
@@ -126,5 +142,41 @@ public class OrderServiceImpl implements OrderService {
                 .totalAmount(totalAmount)
                 .message("Create order successfully")
                 .build();
+    }
+
+    private String buildNormalizedAddress(String addressDetail, String ward, String district, String province) {
+        String detail = addressDetail == null ? "" : addressDetail.trim();
+        String provinceValue = province == null ? "" : province.trim();
+        String districtValue = district == null ? "" : district.trim();
+        String wardValue = ward == null ? "" : ward.trim();
+
+        String lower = detail.toLowerCase();
+        boolean hasProvince = !provinceValue.isEmpty() && lower.contains(provinceValue.toLowerCase());
+        boolean hasDistrict = !districtValue.isEmpty() && lower.contains(districtValue.toLowerCase());
+        boolean hasWard = !wardValue.isEmpty() && lower.contains(wardValue.toLowerCase());
+
+        StringBuilder builder = new StringBuilder();
+
+        if (!detail.isEmpty()) {
+            builder.append(detail);
+        }
+
+        if (!wardValue.isEmpty() && !hasWard) {
+            if (builder.length() > 0) builder.append(", ");
+            builder.append(wardValue);
+        }
+
+        if (!districtValue.isEmpty() && !hasDistrict) {
+            if (builder.length() > 0) builder.append(", ");
+            builder.append(districtValue);
+        }
+
+        if (!provinceValue.isEmpty() && !hasProvince) {
+            if (builder.length() > 0) builder.append(", ");
+            builder.append(provinceValue);
+        }
+
+        String normalized = builder.toString().trim();
+        return normalized.isEmpty() ? detail : normalized;
     }
 }

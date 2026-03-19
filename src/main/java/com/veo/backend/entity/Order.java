@@ -41,6 +41,14 @@ public class Order {
 
     private String shippingAddress;
 
+    private String province;
+
+    private String district;
+
+    private String ward;
+
+    private String addressDetail;
+
     private String phoneNumber;
 
     private String receiverName;

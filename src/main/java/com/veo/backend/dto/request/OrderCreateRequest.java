@@ -11,6 +11,10 @@ import java.util.List;
 public class OrderCreateRequest {
     private OrderType orderType;
     private String shippingAddress;
+    private String province;
+    private String district;
+    private String ward;
+    private String addressDetail; // Số nhà, tổ dân phố, tên đường, v.v.
     private String phoneNumber;
     private String receiverName;
     private String note;

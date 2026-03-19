@@ -29,4 +29,11 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request){
         return ResponseEntity.ok(authService.login(request));
     }
+
+    @PostMapping("/auth/logout")
+    public ResponseEntity<Map<String, String>> logout() {
+        // Stateless JWT logout: frontend chỉ cần xóa token phía client.
+        // Nếu cần logout server-side, implement token blacklist tại đây.
+        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+    }
 }
