@@ -32,5 +32,7 @@ public class ProductResponse {
 
     private LocalDateTime createdAt;
 
+    private Long  categoryId;
+
     private List<ProductVariantResponse> variants;
 }
