@@ -113,6 +113,7 @@ public class ProductServiceImpl implements ProductService {
                 .model3dUrl(product.getModel3dUrl())
                 .isActive(product.getIsActive())
                 .createdAt(product.getCreatedAt())
+                .categoryId(product.getCategory().getId())
                 .variants(variantResponses)
                 .build();
     }
