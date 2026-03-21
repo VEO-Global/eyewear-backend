@@ -1,9 +1,11 @@
 package com.veo.backend.controller;
 
+import com.veo.backend.dto.request.UpdateProfileRequest;
 import com.veo.backend.dto.request.UserCreateRequest;
 import com.veo.backend.dto.response.UserCreateResponse;
 import com.veo.backend.service.AdminUserService;
 import com.veo.backend.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -43,5 +45,10 @@ public class UserController {
     @GetMapping("/profile")
     public ResponseEntity<?> getMyProfile() {
         return ResponseEntity.ok(userService.getMyProfile());
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateMyProfile(@Valid @RequestBody UpdateProfileRequest request) {
+        return ResponseEntity.ok(userService.updateMyProfile(request));
     }
 }

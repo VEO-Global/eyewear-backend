@@ -50,6 +50,8 @@ public class SecurityConfig {
 
                         // 3. XEM PROFILE (CẦN LOGIN)
                         .requestMatchers(HttpMethod.GET, "/api/user/profile").hasAnyRole("CUSTOMER", "ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/user/profile").hasAnyRole("CUSTOMER", "ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/user/profile").hasAnyRole("CUSTOMER", "ADMIN", "MANAGER")
 
                         // 4. QUYỀN CỦA MANAGER (QUẢN LÝ SẢN PHẨM)
                         .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/variants/**", "/api/lens_products/**", "/api/categories").hasRole("MANAGER")
