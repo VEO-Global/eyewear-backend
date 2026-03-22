@@ -44,9 +44,12 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/consultation-appointments").permitAll()
 
                         // 2. NHỮNG API PUBLIC CHO CUSTOMER
-                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/variants/**", "/api/categories/**", "/api/orders/**", "/api/lens_products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/variants/**", "/api/categories/**", "/api/orders/**", "/api/lens_products/**", "/api/locations/**").permitAll()
+                        .requestMatchers("/api/staff/consultation-appointments/**").hasAnyRole("SALES", "OPERATIONS", "MANAGER", "ADMIN")
+                        .requestMatchers("/api/notifications/**").hasAnyRole("CUSTOMER", "ADMIN", "MANAGER", "SALES", "OPERATIONS")
 
                         // 3. XEM PROFILE (CẦN LOGIN)
                         .requestMatchers(HttpMethod.GET, "/api/user/profile").hasAnyRole("CUSTOMER", "ADMIN", "MANAGER")

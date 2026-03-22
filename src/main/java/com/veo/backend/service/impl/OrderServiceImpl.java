@@ -16,9 +16,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +32,7 @@ public class OrderServiceImpl implements OrderService {
     private final LensProductRepository lensProductRepository;
     private final UserRepository userRepository;
     private final PrescriptionRepository prescriptionRepository;
+    private final UserAddressRepository userAddressRepository;
 
     @Override
     @Transactional
@@ -116,6 +120,7 @@ public class OrderServiceImpl implements OrderService {
 
         orderItems.forEach(item -> item.setOrder(order));
         orderRepository.save(order);
+        saveOrUpdateDefaultUserAddress(user, builtAddress, request);
 
         if (orderType == OrderType.PRESCRIPTION) {
             PrescriptionRequest p = request.getPrescription();
@@ -150,10 +155,9 @@ public class OrderServiceImpl implements OrderService {
         String districtValue = district == null ? "" : district.trim();
         String wardValue = ward == null ? "" : ward.trim();
 
-        String lower = detail.toLowerCase();
-        boolean hasProvince = !provinceValue.isEmpty() && lower.contains(provinceValue.toLowerCase());
-        boolean hasDistrict = !districtValue.isEmpty() && lower.contains(districtValue.toLowerCase());
-        boolean hasWard = !wardValue.isEmpty() && lower.contains(wardValue.toLowerCase());
+        boolean hasProvince = containsNormalizedPart(detail, provinceValue);
+        boolean hasDistrict = containsNormalizedPart(detail, districtValue);
+        boolean hasWard = containsNormalizedPart(detail, wardValue);
 
         StringBuilder builder = new StringBuilder();
 
@@ -178,5 +182,54 @@ public class OrderServiceImpl implements OrderService {
 
         String normalized = builder.toString().trim();
         return normalized.isEmpty() ? detail : normalized;
+    }
+
+    private void saveOrUpdateDefaultUserAddress(User user, String normalizedAddress, OrderCreateRequest request) {
+        UserAddress userAddress = userAddressRepository
+                .findFirstByUserIdOrderByIsDefaultDescIdAsc(user.getId())
+                .orElseGet(() -> {
+                    UserAddress newAddress = new UserAddress();
+                    newAddress.setUser(user);
+                    newAddress.setIsDefault(true);
+                    return newAddress;
+                });
+
+        userAddress.setAddressLine(normalizedAddress);
+        userAddress.setAddressDetail(trimToNull(request.getAddressDetail()));
+        userAddress.setWard(trimToNull(request.getWard()));
+        userAddress.setDistrict(trimToNull(request.getDistrict()));
+        userAddress.setCity(defaultIfNull(trimToNull(request.getProvince()), ""));
+        userAddress.setIsDefault(true);
+        userAddressRepository.save(userAddress);
+    }
+
+    private boolean containsNormalizedPart(String base, String part) {
+        if (base == null || part == null || part.isBlank()) {
+            return false;
+        }
+
+        return normalizeForCompare(base).contains(normalizeForCompare(part));
+    }
+
+    private String normalizeForCompare(String value) {
+        String normalized = Normalizer.normalize(Optional.ofNullable(value).orElse(""), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT);
+        normalized = normalized.replaceAll("[,.;\\-_/]+", " ");
+        normalized = normalized.replaceAll("\\s+", " ").trim();
+        return normalized;
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String defaultIfNull(String value, String fallback) {
+        return value == null ? fallback : value;
     }
 }

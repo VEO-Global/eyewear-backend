@@ -35,6 +35,8 @@ CREATE TABLE user_addresses (
     address_line TEXT NOT NULL, -- "123 Đường ABC, Phường X"
     city VARCHAR(100) NOT NULL,
     district VARCHAR(100),
+    ward VARCHAR(100),
+    address_detail TEXT,
     is_default BOOLEAN DEFAULT FALSE, -- Địa chỉ mặc định
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -216,9 +218,63 @@ CREATE TABLE system_configs (
     description TEXT
 );
 
+-- =============================================
+-- 7. CONSULTATION APPOINTMENTS
+-- =============================================
+CREATE TABLE consultation_appointments (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    phone_number VARCHAR(20) NOT NULL,
+    appointment_time DATETIME NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    CONSTRAINT chk_consultation_appointment_status
+        CHECK (status IN ('pending', 'completed'))
+);
+
+CREATE INDEX idx_consultation_appointments_time
+    ON consultation_appointments (appointment_time);
+CREATE INDEX idx_consultation_appointments_phone
+    ON consultation_appointments (phone_number);
+CREATE INDEX idx_consultation_appointments_status
+    ON consultation_appointments (status);
+
+CREATE TABLE user_notifications (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    title VARCHAR(255) NULL,
+    message LONGTEXT NOT NULL,
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    source_module VARCHAR(50) NOT NULL,
+    metadata_json JSON NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    expires_at DATETIME NOT NULL,
+    CONSTRAINT chk_user_notification_type
+        CHECK (type IN ('success', 'error', 'warning', 'info')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_user_notifications_user_id
+    ON user_notifications (user_id);
+CREATE INDEX idx_user_notifications_user_read_created
+    ON user_notifications (user_id, is_read, created_at);
+CREATE INDEX idx_user_notifications_user_created
+    ON user_notifications (user_id, created_at);
+CREATE INDEX idx_user_notifications_expires_at
+    ON user_notifications (expires_at);
+
 -- DATA MẪU CƠ BẢN
 INSERT INTO roles (name) VALUES ('CUSTOMER'), ('SALES'), ('OPERATIONS'), ('MANAGER'), ('ADMIN');
 INSERT INTO categories (name) VALUES ('Kính râm'), ('Gọng kính');
+INSERT INTO consultation_appointments (phone_number, appointment_time, status) VALUES
+('0901234567', '2026-03-18 09:00:00', 'completed'),
+('0912345678', '2026-03-18 14:30:00', 'completed'),
+('0934567890', '2026-03-19 10:15:00', 'completed'),
+('0945678901', '2026-03-24 08:30:00', 'pending'),
+('0956789012', '2026-03-24 10:00:00', 'pending'),
+('0967890123', '2026-03-24 15:00:00', 'pending'),
+('0978901234', '2026-03-25 09:30:00', 'pending'),
+('0989012345', '2026-03-25 16:00:00', 'pending');
 
 -- =============================================
 -- DATA 

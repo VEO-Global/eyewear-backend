@@ -1,5 +1,6 @@
 package com.veo.backend.controller;
 
+import com.veo.backend.dto.response.LocationItemResponse;
 import com.veo.backend.service.LocationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,17 +17,17 @@ public class LocationController {
     private final LocationService locationService;
 
     @GetMapping("/provinces")
-    public List<String> getProvinces() {
+    public List<LocationItemResponse> getProvinces() {
         return locationService.getProvinces();
     }
 
     @GetMapping("/districts")
-    public List<String> getDistricts(@RequestParam String provinceCode) {
+    public List<LocationItemResponse> getDistricts(@RequestParam String provinceCode) {
         return locationService.getDistricts(provinceCode);
     }
 
     @GetMapping("/wards")
-    public List<String> getWards(@RequestParam String districtCode) {
+    public List<LocationItemResponse> getWards(@RequestParam String districtCode) {
         return locationService.getWards(districtCode);
     }
 }

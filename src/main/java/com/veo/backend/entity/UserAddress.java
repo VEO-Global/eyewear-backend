@@ -27,5 +27,10 @@ public class UserAddress {
 
     private String district;
 
+    private String ward;
+
+    @Column(name = "address_detail")
+    private String addressDetail;
+
     private Boolean isDefault = false;
 }

@@ -1,11 +1,13 @@
 package com.veo.backend.service;
 
+import com.veo.backend.dto.response.LocationItemResponse;
+
 import java.util.List;
 
 public interface LocationService {
-    List<String> getProvinces();
+    List<LocationItemResponse> getProvinces();
 
-    List<String> getDistricts(String provinceCode);
+    List<LocationItemResponse> getDistricts(String provinceCode);
 
-    List<String> getWards(String districtCode);
+    List<LocationItemResponse> getWards(String districtCode);
 }

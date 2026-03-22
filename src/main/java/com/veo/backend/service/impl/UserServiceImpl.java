@@ -60,6 +60,11 @@ public class UserServiceImpl implements UserService {
                 });
 
         userAddress.setAddressLine(request.getAddress().trim());
+        userAddress.setAddressDetail(request.getAddress().trim());
+        userAddress.setWard(null);
+        userAddress.setDistrict(null);
+        userAddress.setCity("");
+        userAddress.setIsDefault(true);
         userAddressRepository.save(userAddress);
 
         return mapToResponse(user);
@@ -73,9 +78,8 @@ public class UserServiceImpl implements UserService {
     }
 
     private UserResponse mapToResponse(User user) {
-        String address = userAddressRepository
+        UserAddress defaultAddress = userAddressRepository
                 .findFirstByUserIdOrderByIsDefaultDescIdAsc(user.getId())
-                .map(UserAddress::getAddressLine)
                 .orElse(null);
 
         UserResponse res = new UserResponse();
@@ -83,10 +87,23 @@ public class UserServiceImpl implements UserService {
         res.setEmail(user.getEmail());
         res.setFullName(user.getFullName());
         res.setPhone(user.getPhone());
-        res.setAddress(address);
+        if (defaultAddress != null) {
+            res.setAddress(defaultAddress.getAddressLine());
+            res.setAddressDetail(blankToNull(defaultAddress.getAddressDetail()));
+            res.setWard(blankToNull(defaultAddress.getWard()));
+            res.setDistrict(blankToNull(defaultAddress.getDistrict()));
+            res.setProvince(blankToNull(defaultAddress.getCity()));
+        }
         res.setAvatarUrl(user.getAvatarUrl());
         res.setIsActive(user.getIsActive());
         res.setRole(user.getRole().getName());
         return res;
+    }
+
+    private String blankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value;
     }
 }

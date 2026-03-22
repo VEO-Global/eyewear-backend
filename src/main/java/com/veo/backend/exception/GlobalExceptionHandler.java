@@ -2,6 +2,8 @@ package com.veo.backend.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -16,8 +18,12 @@ public class GlobalExceptionHandler {
                 .timestamp(System.currentTimeMillis())
                 .build();
 
+        HttpStatus status = ex.getErrorCode() == ErrorCode.LOCATION_API_ERROR
+                ? HttpStatus.BAD_GATEWAY
+                : HttpStatus.BAD_REQUEST;
+
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+                .status(status)
                 .body(response);
     }
 
@@ -30,6 +36,28 @@ public class GlobalExceptionHandler {
         ErrorResponse response = ErrorResponse.builder()
                 .errorCode(ErrorCode.VALIDATION_ERROR.name())
                 .message(message)
+                .timestamp(System.currentTimeMillis())
+                .build();
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidJson(HttpMessageNotReadableException ex) {
+        ErrorResponse response = ErrorResponse.builder()
+                .errorCode(ErrorCode.VALIDATION_ERROR.name())
+                .message("Request body contains invalid or unsupported values")
+                .timestamp(System.currentTimeMillis())
+                .build();
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        ErrorResponse response = ErrorResponse.builder()
+                .errorCode(ErrorCode.VALIDATION_ERROR.name())
+                .message("Request contains invalid query or path parameter values")
                 .timestamp(System.currentTimeMillis())
                 .build();
 
