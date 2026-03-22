@@ -15,6 +15,7 @@ import com.veo.backend.repository.ProductRepository;
 import com.veo.backend.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductResponseMapper productResponseMapper;
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductResponse> getAllProducts(String status) {
         if (status == null || status.isBlank()) {
             return productRepository.findByIsActiveTrue()
@@ -50,6 +52,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductResponse> getPreorderProducts() {
         return productRepository.findByIsActiveTrueAndCatalogType(ProductCatalogType.NEW)
                 .stream()
@@ -85,6 +88,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ProductResponse getById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
@@ -172,9 +176,11 @@ public class ProductServiceImpl implements ProductService {
             productImage.setProduct(product);
             productImage.setImageUrl(request.getUrl().trim());
             productImage.setAltText(trimToNull(request.getAlt()));
-            productImage.setIsPrimary(primaryCount == 0
+            boolean isPrimary = primaryCount == 0
                     ? index == 0
-                    : Boolean.TRUE.equals(request.getIsPrimary()) && productImages.stream().noneMatch(image -> Boolean.TRUE.equals(image.getIsPrimary())));
+                    : Boolean.TRUE.equals(request.getIsPrimary()) && productImages.stream().noneMatch(image -> Boolean.TRUE.equals(image.getIsPrimary()));
+            productImage.setIsPrimary(isPrimary);
+            productImage.setIsThumbnail(isPrimary);
             productImage.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : index);
             productImages.add(productImage);
         }
@@ -186,6 +192,9 @@ public class ProductServiceImpl implements ProductService {
         for (ProductImage image : productImages) {
             if (!Boolean.TRUE.equals(image.getIsPrimary())) {
                 image.setIsPrimary(false);
+                image.setIsThumbnail(false);
+            } else {
+                image.setIsThumbnail(true);
             }
         }
 

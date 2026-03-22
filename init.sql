@@ -1,7 +1,7 @@
--- Xóa DB cũ nếu có để làm lại cho sạch
+-- Drop old database if it exists
 DROP DATABASE IF EXISTS eyewear_db;
 
--- BẮT BUỘC: Ép Database dùng chuẩn chữ tiếng Việt Unicode
+-- Create database with UTF-8 support
 CREATE DATABASE eyewear_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 USE eyewear_db;
@@ -28,21 +28,21 @@ CREATE TABLE users (
     FOREIGN KEY (role_id) REFERENCES roles(id)
 );
 
--- Bảng Sổ địa chỉ (User Address Book)
+-- User address book
 CREATE TABLE user_addresses (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    address_line TEXT NOT NULL, -- "123 Đường ABC, Phường X"
+    address_line TEXT NOT NULL, -- "123 Duong ABC, Phuong X"
     city VARCHAR(100) NOT NULL,
     district VARCHAR(100),
     ward VARCHAR(100),
     address_detail TEXT,
-    is_default BOOLEAN DEFAULT FALSE, -- Địa chỉ mặc định
+    is_default BOOLEAN DEFAULT FALSE, -- Default address
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- =============================================
--- 2. PRODUCT CATALOG (SẢN PHẨM)
+-- 2. PRODUCT CATALOG
 -- =============================================
 CREATE TABLE categories (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -88,6 +88,7 @@ CREATE TABLE product_images (
     product_id BIGINT NOT NULL,
     image_url TEXT NOT NULL,
     alt_text VARCHAR(255),
+    is_thumbnail BOOLEAN DEFAULT FALSE,
     is_primary BOOLEAN DEFAULT FALSE,
     sort_order INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -98,17 +99,17 @@ CREATE TABLE product_images (
 CREATE TABLE product_variants (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     product_id BIGINT NOT NULL,
-    sku VARCHAR(50) UNIQUE, -- Mã kho
+    sku VARCHAR(50) UNIQUE, -- Stock keeping unit
     color VARCHAR(50),
     size VARCHAR(20),
-    price DECIMAL(15, 2),   -- Giá riêng (nếu có)
+    price DECIMAL(15, 2),   -- Variant-specific price
     stock_quantity INT DEFAULT 0,
-    expected_restock_date DATETIME, -- Dùng cho PRE-ORDER
+    expected_restock_date DATETIME, -- Used for pre-order items
     is_active BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
--- Tròng kính (Giả định lắp vừa mọi gọng)
+-- Lens products (assumed compatible with all frames)
 CREATE TABLE lens_products (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -360,22 +361,22 @@ VALUES
 
 (2,'Đen Cổ Điển','DarkVision','Gọng đen nhám thanh lịch, phù hợp nhiều phong cách.',2000000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260138/black_eyeglasses_qfrtem.glb','AVAILABLE','OLD',TRUE);
 
-INSERT INTO product_images (product_id, image_url, alt_text, is_primary, sort_order) VALUES
-(1, 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng titan cao cấp', TRUE, 0),
-(1, 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=80', 'Góc nghiêng trái gọng titan cao cấp', FALSE, 1),
-(1, 'https://images.unsplash.com/photo-1508296695146-257a814070b4?auto=format&fit=crop&w=1200&q=80', 'Cận cảnh mặt trước gọng titan cao cấp', FALSE, 2),
-(2, 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80', 'Góc chính kính bảo hộ cận', TRUE, 0),
-(2, 'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?auto=format&fit=crop&w=1200&q=80', 'Cận cảnh tròng kính bảo hộ cận', FALSE, 1),
-(3, 'https://images.unsplash.com/photo-1577803645773-f96470509666?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng phố cổ 4', TRUE, 0),
-(3, 'https://images.unsplash.com/photo-1591076482161-42ce6da69f67?auto=format&fit=crop&w=1200&q=80', 'Góc nghiêng gọng phố cổ 4', FALSE, 1),
-(4, 'https://images.unsplash.com/photo-1591076482161-42ce6da69f67?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng tối giản 08', TRUE, 0),
-(5, 'https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng vuông cổ điển 05', TRUE, 0),
-(6, 'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng dẻo hiện đại', TRUE, 0),
-(6, 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1200&q=80', 'Góc nghiêng gọng dẻo hiện đại', FALSE, 1),
-(7, 'https://images.unsplash.com/photo-1508296695146-257a814070b4?auto=format&fit=crop&w=1200&q=80', 'Góc chính wayfarer huyền thoại', TRUE, 0),
-(8, 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng thanh mảnh 07', TRUE, 0),
-(9, 'https://images.unsplash.com/photo-1508296695146-257a814070b4?auto=format&fit=crop&w=1200&q=80', 'Góc chính phong cách đô thị 3', TRUE, 0),
-(10, 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=80', 'Góc chính titan airlite siêu nhẹ', TRUE, 0);
+INSERT INTO product_images (product_id, image_url, alt_text, is_thumbnail, is_primary, sort_order) VALUES
+(1, 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng titan cao cấp', TRUE, TRUE, 0),
+(1, 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=80', 'Góc nghiêng trái gọng titan cao cấp', FALSE, FALSE, 1),
+(1, 'https://images.unsplash.com/photo-1508296695146-257a814070b4?auto=format&fit=crop&w=1200&q=80', 'Cận cảnh mặt trước gọng titan cao cấp', FALSE, FALSE, 2),
+(2, 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80', 'Góc chính kính bảo hộ cận', TRUE, TRUE, 0),
+(2, 'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?auto=format&fit=crop&w=1200&q=80', 'Cận cảnh tròng kính bảo hộ cận', FALSE, FALSE, 1),
+(3, 'https://images.unsplash.com/photo-1577803645773-f96470509666?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng phố cổ 4', TRUE, TRUE, 0),
+(3, 'https://images.unsplash.com/photo-1591076482161-42ce6da69f67?auto=format&fit=crop&w=1200&q=80', 'Góc nghiêng gọng phố cổ 4', FALSE, FALSE, 1),
+(4, 'https://images.unsplash.com/photo-1591076482161-42ce6da69f67?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng tối giản 08', TRUE, TRUE, 0),
+(5, 'https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng vuông cổ điển 05', TRUE, TRUE, 0),
+(6, 'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng dẻo hiện đại', TRUE, TRUE, 0),
+(6, 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1200&q=80', 'Góc nghiêng gọng dẻo hiện đại', FALSE, FALSE, 1),
+(7, 'https://images.unsplash.com/photo-1508296695146-257a814070b4?auto=format&fit=crop&w=1200&q=80', 'Góc chính wayfarer huyền thoại', TRUE, TRUE, 0),
+(8, 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng thanh mảnh 07', TRUE, TRUE, 0),
+(9, 'https://images.unsplash.com/photo-1508296695146-257a814070b4?auto=format&fit=crop&w=1200&q=80', 'Góc chính phong cách đô thị 3', TRUE, TRUE, 0),
+(10, 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=80', 'Góc chính titan airlite siêu nhẹ', TRUE, TRUE, 0);
 
 -- 2. PRODUCT_VARIANT
 -- SKU (10 ký tự) = [BR][SZ][CL][PID][RND]

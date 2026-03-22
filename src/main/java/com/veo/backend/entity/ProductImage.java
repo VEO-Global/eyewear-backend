@@ -31,6 +31,9 @@ public class ProductImage {
     @Column(name = "alt_text")
     private String altText;
 
+    @Column(name = "is_thumbnail")
+    private Boolean isThumbnail;
+
     @Column(name = "is_primary", nullable = false)
     private Boolean isPrimary = false;
 

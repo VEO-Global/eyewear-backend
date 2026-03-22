@@ -15,17 +15,13 @@ import java.util.Comparator;
 @Component
 public class ProductResponseMapper {
     public ProductResponse map(Product product) {
-        List<ProductImageResponse> imageResponses = product.getImages() == null
-                ? List.of()
-                : product.getImages().stream()
+        List<ProductImageResponse> imageResponses = safeImages(product).stream()
                 .filter(Objects::nonNull)
                 .sorted(productImageOrder())
                 .map(this::mapImage)
                 .toList();
 
-        List<ProductVariantResponse> variantResponses = product.getVariants() == null
-                ? List.of()
-                : product.getVariants().stream()
+        List<ProductVariantResponse> variantResponses = safeVariants(product).stream()
                 .filter(Objects::nonNull)
                 .map(this::mapVariant)
                 .toList();
@@ -48,7 +44,7 @@ public class ProductResponseMapper {
                 .stockQuantity(resolveStockQuantity(product))
                 .isActive(product.getIsActive())
                 .createdAt(product.getCreatedAt())
-                .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
+                .categoryId(resolveCategoryId(product))
                 .images(imageResponses)
                 .variants(variantResponses)
                 .build();
@@ -59,7 +55,7 @@ public class ProductResponseMapper {
                 .id(image.getId())
                 .url(image.getImageUrl())
                 .alt(image.getAltText())
-                .isPrimary(Boolean.TRUE.equals(image.getIsPrimary()))
+                .isPrimary(resolvePrimaryFlag(image))
                 .sortOrder(image.getSortOrder() == null ? 0 : image.getSortOrder())
                 .build();
     }
@@ -78,11 +74,12 @@ public class ProductResponseMapper {
     }
 
     private String resolveImageUrl(Product product) {
-        if (product.getImages() == null || product.getImages().isEmpty()) {
+        List<ProductImage> images = safeImages(product);
+        if (images.isEmpty()) {
             return null;
         }
 
-        return product.getImages().stream()
+        return images.stream()
                 .filter(Objects::nonNull)
                 .sorted(productImageOrder())
                 .map(ProductImage::getImageUrl)
@@ -93,21 +90,50 @@ public class ProductResponseMapper {
 
     private Comparator<ProductImage> productImageOrder() {
         return Comparator
-                .comparing((ProductImage image) -> !Boolean.TRUE.equals(image.getIsPrimary()))
+                .comparing((ProductImage image) -> !resolvePrimaryFlag(image))
                 .thenComparing(image -> image.getSortOrder() == null ? 0 : image.getSortOrder())
                 .thenComparing(ProductImage::getId, Comparator.nullsLast(Comparator.naturalOrder()));
     }
 
+    private boolean resolvePrimaryFlag(ProductImage image) {
+        return Boolean.TRUE.equals(image.getIsPrimary()) || Boolean.TRUE.equals(image.getIsThumbnail());
+    }
+
     private Integer resolveStockQuantity(Product product) {
-        if (product.getVariants() == null || product.getVariants().isEmpty()) {
+        List<ProductVariant> variants = safeVariants(product);
+        if (variants.isEmpty()) {
             return 0;
         }
 
-        return product.getVariants().stream()
+        return variants.stream()
                 .filter(Objects::nonNull)
                 .filter(variant -> Boolean.TRUE.equals(variant.getIsActive()))
                 .map(ProductVariant::getStockQuantity)
                 .filter(Objects::nonNull)
                 .reduce(0, Integer::sum);
+    }
+
+    private List<ProductImage> safeImages(Product product) {
+        try {
+            return product.getImages() == null ? List.of() : product.getImages();
+        } catch (Exception ex) {
+            return List.of();
+        }
+    }
+
+    private List<ProductVariant> safeVariants(Product product) {
+        try {
+            return product.getVariants() == null ? List.of() : product.getVariants();
+        } catch (Exception ex) {
+            return List.of();
+        }
+    }
+
+    private Long resolveCategoryId(Product product) {
+        try {
+            return product.getCategory() != null ? product.getCategory().getId() : null;
+        } catch (Exception ex) {
+            return null;
+        }
     }
 }
