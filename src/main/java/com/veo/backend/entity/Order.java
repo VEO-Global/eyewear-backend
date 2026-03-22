@@ -10,6 +10,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -23,15 +24,18 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true)
+    private String orderCode;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
     @Enumerated(EnumType.STRING)
-    private OrderStatus status;      // PENDING_PAYMENT, SHIPPING...
+    private OrderStatus status;
 
     @Enumerated(EnumType.STRING)
-    private OrderType orderType;   // NORMAL, PRE_ORDER, PRESCRIPTION
+    private OrderType orderType;
 
     private BigDecimal totalAmount;
 
@@ -55,10 +59,19 @@ public class Order {
 
     private String note;
 
+    @Column(columnDefinition = "TEXT")
+    private String cancelReason;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
-    private List<OrderItem> items;
+    private List<OrderItem> items = new ArrayList<>();
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    private List<Payment> payments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    private List<OrderStatusHistory> statusHistory = new ArrayList<>();
 }

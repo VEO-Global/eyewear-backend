@@ -18,9 +18,17 @@ public class GlobalExceptionHandler {
                 .timestamp(System.currentTimeMillis())
                 .build();
 
-        HttpStatus status = ex.getErrorCode() == ErrorCode.LOCATION_API_ERROR
-                ? HttpStatus.BAD_GATEWAY
-                : HttpStatus.BAD_REQUEST;
+        HttpStatus status = switch (ex.getErrorCode()) {
+            case LOCATION_API_ERROR -> HttpStatus.BAD_GATEWAY;
+            case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
+            case FORBIDDEN -> HttpStatus.FORBIDDEN;
+            case USER_NOT_FOUND, PRODUCT_NOT_FOUND, PRODUCT_VARIANT_NOT_FOUND, LENS_PRODUCT_NOT_FOUND,
+                 CATEGORY_NOT_FOUND, ORDER_NOT_FOUND, PAYMENT_NOT_FOUND, RETURN_REQUEST_NOT_FOUND,
+                 APPOINTMENT_NOT_FOUND, NOTIFICATION_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case CONFLICT, PRODUCT_ALREADY_EXIST, PRODUCT_VARIANT_ALREADY_EXIST, CATEGORY_ALREADY_EXIST,
+                 EMAIL_ALREADY_EXIST, PAYMENT_ALREADY_CONFIRMED -> HttpStatus.CONFLICT;
+            default -> HttpStatus.BAD_REQUEST;
+        };
 
         return ResponseEntity
                 .status(status)

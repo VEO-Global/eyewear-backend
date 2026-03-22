@@ -1,5 +1,7 @@
 package com.veo.backend.entity;
 
+import com.veo.backend.enums.PaymentMethod;
+import com.veo.backend.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,15 +26,19 @@ public class Payment {
     @JoinColumn(name = "order_id")
     private Order order;
 
-    private String method;
+    @Enumerated(EnumType.STRING)
+    private PaymentMethod method;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus status;
 
     private BigDecimal amount;
 
     private String transactionCode;
 
     private String paymentProofImg;
-    
+
+    private LocalDateTime expiredAt;
+
     private LocalDateTime paidAt;
 }

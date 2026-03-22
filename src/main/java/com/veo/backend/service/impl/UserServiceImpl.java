@@ -1,6 +1,7 @@
 package com.veo.backend.service.impl;
 
 import com.veo.backend.dto.request.UpdateProfileRequest;
+import com.veo.backend.dto.response.UserAddressResponse;
 import com.veo.backend.dto.response.UserResponse;
 import com.veo.backend.entity.User;
 import com.veo.backend.entity.UserAddress;
@@ -68,6 +69,23 @@ public class UserServiceImpl implements UserService {
         userAddressRepository.save(userAddress);
 
         return mapToResponse(user);
+    }
+
+    @Override
+    public List<UserAddressResponse> getMyAddresses() {
+        User user = getAuthenticatedUser();
+        return userAddressRepository.findAll().stream()
+                .filter(address -> address.getUser() != null && user.getId().equals(address.getUser().getId()))
+                .map(address -> UserAddressResponse.builder()
+                        .id(address.getId())
+                        .addressLine(address.getAddressLine())
+                        .addressDetail(blankToNull(address.getAddressDetail()))
+                        .ward(blankToNull(address.getWard()))
+                        .district(blankToNull(address.getDistrict()))
+                        .province(blankToNull(address.getCity()))
+                        .isDefault(address.getIsDefault())
+                        .build())
+                .toList();
     }
 
     private User getAuthenticatedUser() {
