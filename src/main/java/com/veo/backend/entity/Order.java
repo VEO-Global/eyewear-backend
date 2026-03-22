@@ -2,6 +2,7 @@ package com.veo.backend.entity;
 
 import com.veo.backend.enums.OrderStatus;
 import com.veo.backend.enums.OrderType;
+import com.veo.backend.enums.PrescriptionOption;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -36,6 +37,9 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     private OrderType orderType;
+
+    @Enumerated(EnumType.STRING)
+    private PrescriptionOption prescriptionOption;
 
     private BigDecimal totalAmount;
 

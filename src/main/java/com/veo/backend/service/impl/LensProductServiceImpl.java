@@ -67,6 +67,7 @@ public class LensProductServiceImpl implements LensProductService {
                 .refractionIndex(lensProduct.getRefractionIndex())
                 .description(lensProduct.getDescription())
                 .price(lensProduct.getPrice())
+                .isActive(lensProduct.getIsActive())
                 .build();
     }
 }

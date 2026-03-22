@@ -47,9 +47,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/consultation-appointments").permitAll()
 
                         // 2. NHỮNG API PUBLIC CHO CUSTOMER
-                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/variants/**", "/api/categories/**", "/api/lens_products/**", "/api/locations/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/products/**", "/api/variants/**", "/api/categories/**", "/api/lens_products/**", "/api/lens-products/**", "/lens-products/**", "/api/locations/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/orders/my", "/api/orders/*").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.GET, "/orders/my", "/orders/*").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.POST, "/api/orders", "/api/orders/checkout", "/orders", "/orders/checkout").hasRole("CUSTOMER")
                         .requestMatchers("/api/staff/consultation-appointments/**").hasAnyRole("SALES", "OPERATIONS", "MANAGER", "ADMIN")
+                        .requestMatchers("/api/staff/prescriptions/**", "/api/staff/orders/*/prescription", "/staff/prescriptions/**", "/staff/orders/*/prescription").hasAnyRole("SALES", "MANAGER", "ADMIN")
                         .requestMatchers("/api/notifications/**").hasAnyRole("CUSTOMER", "ADMIN", "MANAGER", "SALES", "OPERATIONS")
 
                         // 3. XEM PROFILE (CẦN LOGIN)

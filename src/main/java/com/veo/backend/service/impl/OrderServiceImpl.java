@@ -3,13 +3,19 @@ package com.veo.backend.service.impl;
 import com.veo.backend.dto.request.OrderCreateRequest;
 import com.veo.backend.dto.request.OrderItemRequest;
 import com.veo.backend.dto.request.PrescriptionRequest;
+import com.veo.backend.dto.response.LensSummaryResponse;
 import com.veo.backend.dto.response.OrderCreateResponse;
 import com.veo.backend.dto.response.OrderItemResponse;
 import com.veo.backend.dto.response.OrderResponse;
 import com.veo.backend.dto.response.PagedResponse;
+import com.veo.backend.dto.response.PrescriptionResponse;
+import com.veo.backend.dto.response.PriceSummaryResponse;
 import com.veo.backend.entity.*;
 import com.veo.backend.enums.OrderStatus;
 import com.veo.backend.enums.OrderType;
+import com.veo.backend.enums.PaymentStatus;
+import com.veo.backend.enums.PrescriptionOption;
+import com.veo.backend.enums.PrescriptionReviewStatus;
 import com.veo.backend.exception.AppException;
 import com.veo.backend.exception.ErrorCode;
 import com.veo.backend.repository.*;
@@ -26,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -38,6 +45,7 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final PrescriptionRepository prescriptionRepository;
     private final UserAddressRepository userAddressRepository;
+    private final SystemConfigRepository systemConfigRepository;
 
     @Override
     @Transactional
@@ -45,27 +53,29 @@ public class OrderServiceImpl implements OrderService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND, "User not found"));
 
-        OrderType orderType = request.getOrderType();
+        PrescriptionOption prescriptionOption = request.getPrescriptionOption();
 
-        if (orderType == null) {
-            throw new AppException(ErrorCode.VALIDATION_ERROR, "Order type is required");
+        if (prescriptionOption == null) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "Prescription option is required");
         }
 
+        validatePrescriptionRequest(request, prescriptionOption);
+        validateShippingRequest(request);
+
+        OrderType orderType = prescriptionOption == PrescriptionOption.WITH_PRESCRIPTION
+                ? OrderType.PRESCRIPTION
+                : OrderType.NORMAL;
+        LensProduct selectedLens = resolveSelectedLens(request, prescriptionOption);
+
         List<OrderItem>  orderItems = new ArrayList<>();
-        BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal itemsSubtotal = BigDecimal.ZERO;
 
         for (OrderItemRequest itemRequest : request.getItems()){
-            ProductVariant variant = variantRepository.findById(itemRequest.getProductVariantId())
+            Long variantId = itemRequest.resolveVariantId();
+            ProductVariant variant = variantRepository.findById(variantId)
                     .orElseThrow(()-> new AppException(ErrorCode.VALIDATION_ERROR, "Variant not found"));
 
             Integer quantity = itemRequest.getQuantity();
-
-            LensProduct lensProduct = null;
-
-            if (itemRequest.getLensProductId() != null) {
-                lensProduct = lensProductRepository.findById(itemRequest.getLensProductId())
-                        .orElseThrow(()-> new AppException(ErrorCode.VALIDATION_ERROR, "LensProduct not found"));
-            }
 
             if (orderType != OrderType.PRE_ORDER) {
                 if (variant.getStockQuantity() < quantity) {
@@ -76,66 +86,64 @@ public class OrderServiceImpl implements OrderService {
                 variantRepository.save(variant);
             }
 
-            BigDecimal itemPrice = variant.getPrice();
-
-            if (lensProduct != null) {
-                itemPrice = itemPrice.add(lensProduct.getPrice());
-            }
-
-            BigDecimal itemTotal = itemPrice.multiply(BigDecimal.valueOf(quantity));
-
-            totalAmount = totalAmount.add(itemTotal);
+            BigDecimal itemTotal = defaultAmount(variant.getPrice()).multiply(BigDecimal.valueOf(quantity));
+            itemsSubtotal = itemsSubtotal.add(itemTotal);
 
             OrderItem orderItem = new OrderItem();
             orderItem.setProductVariant(variant);
-            orderItem.setLensProduct(lensProduct);
+            orderItem.setLensProduct(null);
             orderItem.setQuantity(quantity);
             orderItem.setPrice(itemTotal);
             orderItems.add(orderItem);
         }
 
+        BigDecimal lensPrice = selectedLens != null ? defaultAmount(selectedLens.getPrice()) : BigDecimal.ZERO;
+        BigDecimal shippingFee = resolveShippingFee();
+        BigDecimal subtotalAmount = itemsSubtotal.add(lensPrice);
+        BigDecimal finalAmount = subtotalAmount.add(shippingFee);
+
         Order order = new Order();
         order.setUser(user);
         order.setOrderType(orderType);
-        order.setStatus(
-                orderType == OrderType.PRESCRIPTION
-                        ? OrderStatus.PENDING_VERIFICATION
-                        : OrderStatus.PENDING_PAYMENT
-        );
+        order.setPrescriptionOption(prescriptionOption);
+        order.setStatus(OrderStatus.PENDING_PAYMENT);
 
-        // Build normalized shipping address with duplicate suppression
         String builtAddress = buildNormalizedAddress(
-                request.getAddressDetail(),
-                request.getWard(),
-                request.getDistrict(),
-                request.getProvince()
+                resolveAddressDetail(request),
+                resolveWard(request),
+                resolveDistrict(request),
+                resolveProvince(request)
         );
 
         order.setShippingAddress(builtAddress);
-        order.setProvince(request.getProvince());
-        order.setDistrict(request.getDistrict());
-        order.setWard(request.getWard());
-        order.setAddressDetail(request.getAddressDetail());
+        order.setProvince(resolveProvince(request));
+        order.setDistrict(resolveDistrict(request));
+        order.setWard(resolveWard(request));
+        order.setAddressDetail(resolveAddressDetail(request));
         order.setPhoneNumber(request.getPhoneNumber());
         order.setReceiverName(request.getReceiverName());
         order.setNote(request.getNote());
-        order.setTotalAmount(totalAmount);
+        order.setTotalAmount(subtotalAmount);
+        order.setShippingFee(shippingFee);
+        order.setDiscountAmount(BigDecimal.ZERO);
         order.setCreatedAt(LocalDateTime.now());
         order.setItems(orderItems);
 
         orderItems.forEach(item -> item.setOrder(order));
         orderRepository.save(order);
+        order.setOrderCode("ORD-" + order.getId());
+        orderRepository.save(order);
         saveOrUpdateDefaultUserAddress(user, builtAddress, request);
 
-        if (orderType == OrderType.PRESCRIPTION) {
+        Prescription savedPrescription = null;
+        if (prescriptionOption == PrescriptionOption.WITH_PRESCRIPTION) {
             PrescriptionRequest p = request.getPrescription();
-
-            if (p == null) {
-                throw new AppException(ErrorCode.VALIDATION_ERROR, "Prescription not allowed");
-            }
-
             Prescription prescription = new Prescription();
             prescription.setOrder(order);
+            prescription.setLensProduct(selectedLens);
+            prescription.setLensNameSnapshot(selectedLens != null ? selectedLens.getName() : null);
+            prescription.setLensPriceSnapshot(selectedLens != null ? selectedLens.getPrice() : null);
+            prescription.setLensDescriptionSnapshot(selectedLens != null ? selectedLens.getDescription() : null);
             prescription.setPrescriptionImageUrl(p.getPrescriptionImageUrl());
             prescription.setSphereOd(p.getSphereOd());
             prescription.setSphereOs(p.getSphereOs());
@@ -144,12 +152,32 @@ public class OrderServiceImpl implements OrderService {
             prescription.setAxisOd(p.getAxisOd());
             prescription.setAxisOs(p.getAxisOs());
             prescription.setPd(p.getPd());
-            prescriptionRepository.save(prescription);
+            prescription.setReviewStatus(PrescriptionReviewStatus.PENDING);
+            prescription.setCreatedAt(LocalDateTime.now());
+            savedPrescription = prescriptionRepository.save(prescription);
         }
 
         return OrderCreateResponse.builder()
                 .orderId(order.getId())
-                .totalAmount(totalAmount)
+                .totalAmount(subtotalAmount)
+                .orderCode(order.getOrderCode())
+                .shippingFee(shippingFee)
+                .discountAmount(defaultAmount(order.getDiscountAmount()))
+                .finalAmount(finalAmount)
+                .orderStatus(order.getStatus())
+                .paymentStatus(PaymentStatus.UNPAID)
+                .prescriptionOption(prescriptionOption)
+                .prescriptionReviewStatus(savedPrescription != null ? savedPrescription.getReviewStatus() : null)
+                .items(mapOrderItems(order.getItems()))
+                .lens(mapLensSummaryResponse(savedPrescription))
+                .prescription(mapPrescriptionResponse(savedPrescription))
+                .priceSummary(PriceSummaryResponse.builder()
+                        .itemsSubtotal(itemsSubtotal)
+                        .lensPrice(lensPrice)
+                        .shippingFee(shippingFee)
+                        .total(finalAmount)
+                        .build())
+                .createdAt(order.getCreatedAt())
                 .message("Create order successfully")
                 .build();
     }
@@ -252,10 +280,10 @@ public class OrderServiceImpl implements OrderService {
                 });
 
         userAddress.setAddressLine(normalizedAddress);
-        userAddress.setAddressDetail(trimToNull(request.getAddressDetail()));
-        userAddress.setWard(trimToNull(request.getWard()));
-        userAddress.setDistrict(trimToNull(request.getDistrict()));
-        userAddress.setCity(defaultIfNull(trimToNull(request.getProvince()), ""));
+        userAddress.setAddressDetail(trimToNull(resolveAddressDetail(request)));
+        userAddress.setWard(trimToNull(resolveWard(request)));
+        userAddress.setDistrict(trimToNull(resolveDistrict(request)));
+        userAddress.setCity(defaultIfNull(trimToNull(resolveProvince(request)), ""));
         userAddress.setIsDefault(true);
         userAddressRepository.save(userAddress);
     }
@@ -291,14 +319,26 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private OrderResponse mapOrderResponse(Order order) {
+        Prescription prescription = prescriptionRepository.findByOrderId(order.getId()).orElse(null);
+        BigDecimal subtotal = defaultAmount(order.getTotalAmount()).subtract(defaultAmount(order.getShippingFee())).add(defaultAmount(order.getDiscountAmount()));
+        BigDecimal lensPrice = prescription != null ? defaultAmount(prescription.getLensPriceSnapshot()) : BigDecimal.ZERO;
+        BigDecimal itemSubtotal = subtotal.subtract(lensPrice).max(BigDecimal.ZERO);
+
         return OrderResponse.builder()
                 .orderId(order.getId())
+                .orderCode(order.getOrderCode())
                 .customerEmail(order.getUser().getEmail())
                 .status(order.getStatus())
+                .orderStatus(order.getStatus())
                 .statusLabel(getStatusLabel(order.getStatus()))
                 .customerTab(getCustomerTab(order.getStatus()))
                 .orderType(order.getOrderType())
                 .totalAmount(order.getTotalAmount())
+                .subtotal(subtotal.max(BigDecimal.ZERO))
+                .finalAmount(defaultAmount(order.getTotalAmount()).add(defaultAmount(order.getShippingFee())).subtract(defaultAmount(order.getDiscountAmount())))
+                .prescriptionOption(order.getPrescriptionOption() != null ? order.getPrescriptionOption()
+                        : (prescription != null ? PrescriptionOption.WITH_PRESCRIPTION : PrescriptionOption.WITHOUT_PRESCRIPTION))
+                .prescriptionReviewStatus(prescription != null ? prescription.getReviewStatus() : null)
                 .shippingFee(defaultAmount(order.getShippingFee()))
                 .discountAmount(defaultAmount(order.getDiscountAmount()))
                 .shippingAddress(order.getShippingAddress())
@@ -311,6 +351,14 @@ public class OrderServiceImpl implements OrderService {
                 .note(order.getNote())
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt())
+                .lens(mapLensSummaryResponse(prescription))
+                .prescription(mapPrescriptionResponse(prescription))
+                .priceSummary(PriceSummaryResponse.builder()
+                        .itemsSubtotal(itemSubtotal)
+                        .lensPrice(lensPrice)
+                        .shippingFee(defaultAmount(order.getShippingFee()))
+                        .total(defaultAmount(order.getTotalAmount()).add(defaultAmount(order.getShippingFee())).subtract(defaultAmount(order.getDiscountAmount())))
+                        .build())
                 .items(mapOrderItems(order.getItems()))
                 .build();
     }
@@ -323,14 +371,194 @@ public class OrderServiceImpl implements OrderService {
         return orderItems.stream()
                 .map(item -> OrderItemResponse.builder()
                         .id(item.getId())
+                        .orderItemId(item.getId())
                         .productVariantId(item.getProductVariant() != null ? item.getProductVariant().getId() : null)
+                        .productId(item.getProductVariant() != null && item.getProductVariant().getProduct() != null
+                                ? item.getProductVariant().getProduct().getId() : null)
+                        .productName(item.getProductVariant() != null && item.getProductVariant().getProduct() != null
+                                ? item.getProductVariant().getProduct().getName() : null)
                         .productVariantName(resolveVariantName(item))
+                        .variantName(resolveVariantName(item))
                         .lensProductId(item.getLensProduct() != null ? item.getLensProduct().getId() : null)
                         .lensProductName(item.getLensProduct() != null ? item.getLensProduct().getName() : null)
                         .quantity(item.getQuantity())
+                        .unitPrice(resolveUnitPrice(item))
+                        .lineTotal(item.getPrice())
                         .price(item.getPrice())
+                        .thumbnailUrl(resolveThumbnailUrl(item))
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    private PrescriptionResponse mapPrescriptionResponse(Prescription prescription) {
+        if (prescription == null) {
+            return null;
+        }
+
+        return PrescriptionResponse.builder()
+                .prescriptionImageUrl(prescription.getPrescriptionImageUrl())
+                .sphereOd(prescription.getSphereOd())
+                .sphereOs(prescription.getSphereOs())
+                .cylinderOd(prescription.getCylinderOd())
+                .cylinderOs(prescription.getCylinderOs())
+                .axisOd(prescription.getAxisOd())
+                .axisOs(prescription.getAxisOs())
+                .pd(prescription.getPd())
+                .reviewStatus(prescription.getReviewStatus())
+                .reviewNote(prescription.getReviewNote())
+                .build();
+    }
+
+    private LensSummaryResponse mapLensSummaryResponse(Prescription prescription) {
+        if (prescription == null) {
+            return null;
+        }
+
+        return LensSummaryResponse.builder()
+                .id(prescription.getLensProduct() != null ? prescription.getLensProduct().getId() : null)
+                .name(prescription.getLensNameSnapshot())
+                .price(prescription.getLensPriceSnapshot())
+                .description(prescription.getLensDescriptionSnapshot())
+                .build();
+    }
+
+    private BigDecimal resolveUnitPrice(OrderItem item) {
+        if (item == null || item.getQuantity() == null || item.getQuantity() <= 0 || item.getPrice() == null) {
+            return null;
+        }
+
+        return item.getPrice().divide(BigDecimal.valueOf(item.getQuantity()), 2, java.math.RoundingMode.HALF_UP);
+    }
+
+    private String resolveThumbnailUrl(OrderItem item) {
+        if (item == null || item.getProductVariant() == null || item.getProductVariant().getProduct() == null) {
+            return null;
+        }
+
+        return null;
+    }
+
+    private void validatePrescriptionRequest(OrderCreateRequest request, PrescriptionOption prescriptionOption) {
+        boolean hasPrescription = request.getPrescription() != null;
+        boolean hasLensSelection = request.getLensProductId() != null || (request.getItems() != null && request.getItems().stream()
+                .anyMatch(item -> item.getLensProductId() != null));
+
+        if (prescriptionOption == PrescriptionOption.WITHOUT_PRESCRIPTION) {
+            if (hasPrescription || hasLensSelection) {
+                throw new AppException(ErrorCode.VALIDATION_ERROR,
+                        "Prescription and lens selection are not allowed when prescription option is WITHOUT_PRESCRIPTION");
+            }
+            return;
+        }
+
+        if (!hasPrescription) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "Prescription is required when prescription option is WITH_PRESCRIPTION");
+        }
+
+        PrescriptionRequest prescription = request.getPrescription();
+        boolean hasImage = prescription.getPrescriptionImageUrl() != null && !prescription.getPrescriptionImageUrl().isBlank();
+        boolean hasManualInput = prescription.getSphereOd() != null
+                || prescription.getSphereOs() != null
+                || prescription.getCylinderOd() != null
+                || prescription.getCylinderOs() != null
+                || prescription.getAxisOd() != null
+                || prescription.getAxisOs() != null
+                || prescription.getPd() != null;
+
+        if (!hasImage && !hasManualInput) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR,
+                    "Prescription image or manual prescription values are required");
+        }
+
+        if ((prescription.getCylinderOd() != null && prescription.getAxisOd() == null)
+                || (prescription.getCylinderOs() != null && prescription.getAxisOs() == null)) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR,
+                    "Axis is required when cylinder value is provided");
+        }
+
+        if (prescription.getPd() == null) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "PD is required when prescription option is WITH_PRESCRIPTION");
+        }
+
+        if (prescription.getPd().compareTo(BigDecimal.valueOf(40)) < 0
+                || prescription.getPd().compareTo(BigDecimal.valueOf(80)) > 0) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "PD must be between 40 and 80");
+        }
+    }
+
+    private void validateShippingRequest(OrderCreateRequest request) {
+        if (resolveAddressDetail(request) == null || resolveAddressDetail(request).isBlank()) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "Address detail is required");
+        }
+    }
+
+    private LensProduct resolveSelectedLens(OrderCreateRequest request, PrescriptionOption prescriptionOption) {
+        Long lensProductId = request.getLensProductId();
+        if (lensProductId == null && request.getItems() != null) {
+            lensProductId = request.getItems().stream()
+                    .map(OrderItemRequest::getLensProductId)
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        if (prescriptionOption == PrescriptionOption.WITH_PRESCRIPTION && lensProductId == null) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "Lens product is required when prescription option is WITH_PRESCRIPTION");
+        }
+
+        if (lensProductId == null) {
+            return null;
+        }
+
+        LensProduct lensProduct = lensProductRepository.findById(lensProductId)
+                .orElseThrow(() -> new AppException(ErrorCode.LENS_PRODUCT_NOT_FOUND, "Lens product not found"));
+
+        if (!Boolean.TRUE.equals(lensProduct.getIsActive())) {
+            throw new AppException(ErrorCode.LENS_PRODUCT_NOT_VALID, "Lens product not active");
+        }
+
+        return lensProduct;
+    }
+
+    private BigDecimal resolveShippingFee() {
+        return systemConfigRepository.findByConfigKey("shipping.base_fee")
+                .map(SystemConfig::getConfigValue)
+                .map(value -> {
+                    try {
+                        return new BigDecimal(value);
+                    } catch (NumberFormatException ex) {
+                        return BigDecimal.valueOf(30000);
+                    }
+                })
+                .orElse(BigDecimal.valueOf(30000));
+    }
+
+    private String resolveProvince(OrderCreateRequest request) {
+        if (request.getShippingAddress() != null && request.getShippingAddress().getProvinceName() != null) {
+            return request.getShippingAddress().getProvinceName();
+        }
+        return request.getProvince();
+    }
+
+    private String resolveDistrict(OrderCreateRequest request) {
+        if (request.getShippingAddress() != null && request.getShippingAddress().getDistrictName() != null) {
+            return request.getShippingAddress().getDistrictName();
+        }
+        return request.getDistrict();
+    }
+
+    private String resolveWard(OrderCreateRequest request) {
+        if (request.getShippingAddress() != null && request.getShippingAddress().getWardName() != null) {
+            return request.getShippingAddress().getWardName();
+        }
+        return request.getWard();
+    }
+
+    private String resolveAddressDetail(OrderCreateRequest request) {
+        if (request.getShippingAddress() != null && request.getShippingAddress().getAddressDetail() != null) {
+            return request.getShippingAddress().getAddressDetail();
+        }
+        return request.getAddressDetail();
     }
 
     private String resolveVariantName(OrderItem item) {

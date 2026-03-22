@@ -1,5 +1,7 @@
 package com.veo.backend.dto.request;
 
+import com.veo.backend.enums.ProductCatalogType;
+import com.veo.backend.enums.ProductStatus;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -40,4 +42,8 @@ public class ProductCreateRequest {
     private Boolean isActive;
 
     private Long categoryId;
+
+    private ProductStatus status;
+
+    private ProductCatalogType catalogType;
 }

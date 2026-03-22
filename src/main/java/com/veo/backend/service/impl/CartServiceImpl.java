@@ -102,9 +102,6 @@ public class CartServiceImpl implements CartService {
             cartItem = cartItemRepository.save(cartItem);
         }
 
-        variant.setStockQuantity(variant.getStockQuantity() - request.getQuantity());
-        variantRepository.save(variant);
-
         cart.getItems().add(cartItem);
         cartRepository.save(cart);
 
@@ -126,10 +123,6 @@ public class CartServiceImpl implements CartService {
         if (!item.getCart().getId().equals(cart.getId())) {
             throw new AppException(ErrorCode.FORBIDDEN, "Cart item does not belong to user");
         }
-
-        ProductVariant variant = item.getProductVariant();
-        variant.setStockQuantity(variant.getStockQuantity() + item.getQuantity());
-        variantRepository.save(variant);
 
         if (cart.getItems() != null) {
             cart.getItems().removeIf(i -> i.getId().equals(cartItemId));

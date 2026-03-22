@@ -1,7 +1,7 @@
 package com.veo.backend.dto.request;
 
-import com.veo.backend.enums.OrderType;
 import com.veo.backend.enums.PaymentMethod;
+import com.veo.backend.enums.PrescriptionOption;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -12,10 +12,15 @@ import java.util.List;
 
 @Data
 public class OrderCreateRequest {
-    @NotNull(message = "Order type is required")
-    private OrderType orderType;
-
     private PaymentMethod paymentMethod;
+
+    @NotNull(message = "Prescription option is required")
+    private PrescriptionOption prescriptionOption;
+
+    private Long lensProductId;
+
+    @Valid
+    private ShippingAddressRequest shippingAddress;
 
     private String province;
 
@@ -23,7 +28,6 @@ public class OrderCreateRequest {
 
     private String ward;
 
-    @NotBlank(message = "Address detail is required")
     private String addressDetail;
 
     @NotBlank(message = "Phone number is required")

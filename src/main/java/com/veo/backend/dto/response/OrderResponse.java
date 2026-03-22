@@ -3,6 +3,8 @@ package com.veo.backend.dto.response;
 import com.veo.backend.enums.OrderStatus;
 import com.veo.backend.enums.OrderType;
 import com.veo.backend.enums.PaymentStatus;
+import com.veo.backend.enums.PrescriptionOption;
+import com.veo.backend.enums.PrescriptionReviewStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -21,6 +23,8 @@ public class OrderResponse {
     private String statusLabel;
     private String customerTab;
     private OrderType orderType;
+    private PrescriptionOption prescriptionOption;
+    private PrescriptionReviewStatus prescriptionReviewStatus;
     private BigDecimal totalAmount;
     private BigDecimal subtotal;
     private BigDecimal shippingFee;
@@ -41,6 +45,9 @@ public class OrderResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private PaymentSummaryResponse payment;
+    private LensSummaryResponse lens;
+    private PrescriptionResponse prescription;
+    private PriceSummaryResponse priceSummary;
     private List<OrderStatusHistoryResponse> statusHistory;
     private List<ReturnRequestSummaryResponse> returnRequests;
     private List<OrderItemResponse> items;

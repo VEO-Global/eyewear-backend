@@ -33,4 +33,13 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "items.lensProduct"
     })
     Optional<Order> findByIdAndUserId(Long id, Long userId);
+
+    @EntityGraph(attributePaths = {
+            "items",
+            "items.productVariant",
+            "items.productVariant.product",
+            "items.lensProduct",
+            "user"
+    })
+    Optional<Order> findWithUserById(Long id);
 }

@@ -7,12 +7,9 @@ import java.math.BigDecimal;
 
 @Data
 @Builder
-public class LensProductResponse {
+public class LensSummaryResponse {
     private Long id;
     private String name;
-    private String type;
-    private BigDecimal refractionIndex;
-    private String description;
     private BigDecimal price;
-    private Boolean isActive;
+    private String description;
 }

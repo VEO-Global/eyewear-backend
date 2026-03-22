@@ -1,5 +1,7 @@
 package com.veo.backend.entity;
 
+import com.veo.backend.enums.ProductStatus;
+import com.veo.backend.enums.ProductCatalogType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;
@@ -43,10 +45,20 @@ public class Product {
     @Column(name = "model_3d_url")
     private String model3dUrl;
 
+    @Enumerated(EnumType.STRING)
+    private ProductStatus status = ProductStatus.AVAILABLE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'OLD'")
+    private ProductCatalogType catalogType = ProductCatalogType.OLD;
+
     private Boolean isActive = true;
 
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private List<ProductVariant> variants = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    private List<ProductImage> images = new ArrayList<>();
 }

@@ -6,6 +6,7 @@ import com.veo.backend.dto.response.OrderCreateResponse;
 import com.veo.backend.dto.response.OrderResponse;
 import com.veo.backend.dto.response.PagedResponse;
 import com.veo.backend.service.OrderService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping({"/api/orders", "/orders"})
 @RequiredArgsConstructor
 public class OrderController {
     private final OrderService orderService;
@@ -45,9 +46,9 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getMyOrderDetail(email, id));
     }
 
-    @PostMapping
+    @PostMapping({"", "/checkout"})
     public ResponseEntity<OrderCreateResponse> createOrder(
-            @RequestBody OrderCreateRequest request,
+            @Valid @RequestBody OrderCreateRequest request,
             Authentication authentication
     ) {
         String email = authentication.getName();

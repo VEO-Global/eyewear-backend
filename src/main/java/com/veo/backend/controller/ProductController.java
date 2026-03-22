@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping({"/api/products", "/products"})
 public class ProductController {
     private final ProductService service;
 
@@ -20,8 +20,13 @@ public class ProductController {
     }
 
     @GetMapping
-    public List<ProductResponse> getAllProducts() {
-        return service.getAllProducts();
+    public List<ProductResponse> getAllProducts(@RequestParam(required = false) String status) {
+        return service.getAllProducts(status);
+    }
+
+    @GetMapping("/preorder")
+    public List<ProductResponse> getPreorderProducts() {
+        return service.getPreorderProducts();
     }
 
     @PostMapping

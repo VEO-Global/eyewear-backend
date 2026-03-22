@@ -1,5 +1,7 @@
 package com.veo.backend.dto.response;
 
+import com.veo.backend.enums.ProductCatalogType;
+import com.veo.backend.enums.ProductStatus;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -27,6 +29,12 @@ public class ProductResponse {
     private String gender;
 
     private String model3dUrl;
+
+    private String imageUrl;
+
+    private ProductStatus status;
+
+    private ProductCatalogType catalogType;
 
     private Boolean isActive;
 

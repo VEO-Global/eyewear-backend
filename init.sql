@@ -60,6 +60,8 @@ CREATE TABLE products (
     material VARCHAR(100),
     gender VARCHAR(20),    -- Male, Female, Unisex
     model_3d_url TEXT,
+    status VARCHAR(50) NOT NULL DEFAULT 'AVAILABLE',
+    catalog_type VARCHAR(20) NOT NULL DEFAULT 'OLD',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id)
@@ -139,6 +141,7 @@ CREATE TABLE orders (
     -- Status: PENDING_PAYMENT -> PENDING_VERIFICATION -> WAITING_FOR_STOCK -> MANUFACTURING -> SHIPPING -> COMPLETED
     status VARCHAR(50) NOT NULL DEFAULT 'PENDING_PAYMENT',
     order_type VARCHAR(20) NOT NULL, -- NORMAL, PRE_ORDER, PRESCRIPTION
+    prescription_option VARCHAR(50),
     
     total_amount DECIMAL(15, 2) NOT NULL,
     shipping_fee DECIMAL(15, 2) DEFAULT 0,
@@ -175,9 +178,13 @@ CREATE TABLE order_items (
 CREATE TABLE prescriptions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     order_id BIGINT NOT NULL,
+    lens_product_id BIGINT,
     
     -- Ảnh toa thuốc khách up (Bắt buộc)
     prescription_image_url TEXT NOT NULL,
+    lens_name_snapshot VARCHAR(255),
+    lens_price_snapshot DECIMAL(15, 2),
+    lens_description_snapshot TEXT,
     
     -- Kết quả xác thực (Nhập tay bởi Sale)
     sphere_od DECIMAL(5, 2), -- Mắt Phải
@@ -187,12 +194,15 @@ CREATE TABLE prescriptions (
     axis_od INT,
     axis_os INT,
     pd DECIMAL(5, 2),
+    review_status VARCHAR(50),
     
     verified_by BIGINT, -- Sale nào duyệt?
     verified_at DATETIME,
+    created_at DATETIME,
     staff_note TEXT,
     
     FOREIGN KEY (order_id) REFERENCES orders(id),
+    FOREIGN KEY (lens_product_id) REFERENCES lens_products(id),
     FOREIGN KEY (verified_by) REFERENCES users(id)
 );
 
@@ -282,53 +292,61 @@ INSERT INTO consultation_appointments (phone_number, appointment_time, status) V
 -- 1. PRODUCTS (Sản phẩm bắt buộc có link 3D)
 -- category_id 1 = Kính râm, 2 = Gọng kính
 INSERT INTO products 
-(category_id, name, brand, description, base_price, material, gender, model_3d_url, is_active)
+(category_id, name, brand, description, base_price, material, gender, model_3d_url, status, catalog_type, is_active)
 VALUES
-(2,'Titanium Edge Pro','RayVision','Premium titanium frame',3200000,'Titanium','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260443/titanium_frame_glass_f1ffh9.glb',TRUE),
+(2,'Titanium Edge Pro','RayVision','Premium titanium frame',3200000,'Titanium','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260443/titanium_frame_glass_f1ffh9.glb','AVAILABLE','NEW',TRUE),
 
-(2,'Safety Shield RX','OptiSafe','Protective prescription glasses',2500000,'Polycarbonate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260366/safety_glasses_prescription_mkbtst.glb',TRUE),
+(2,'Safety Shield RX','OptiSafe','Protective prescription glasses',2500000,'Polycarbonate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260366/safety_glasses_prescription_mkbtst.glb','AVAILABLE','NEW',TRUE),
 
-(2,'Urban Classic 4','VistaWear','Modern casual frame',1800000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260353/glasses_4_tsxlvu.glb',TRUE),
+(2,'Urban Classic 4','VistaWear','Modern casual frame',1800000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260353/glasses_4_tsxlvu.glb','AVAILABLE','NEW',TRUE),
 
-(2,'Minimal Frame 08','NeoOptic','Lightweight elegant frame',2100000,'Stainless Steel','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260352/glasses_08_ma8hbq.glb',TRUE),
+(2,'Minimal Frame 08','NeoOptic','Lightweight elegant frame',2100000,'Stainless Steel','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260352/glasses_08_ma8hbq.glb','AVAILABLE','NEW',TRUE),
 
-(2,'Retro Square 05','ClassicEyes','Vintage square design',1950000,'Acetate','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260348/glasses_05_eqqwbl.glb',TRUE),
+(2,'Retro Square 05','ClassicEyes','Vintage square design',1950000,'Acetate','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260348/glasses_05_eqqwbl.glb','AVAILABLE','NEW',TRUE),
 
-(2,'Modern Flex','VisionPro','Flexible TR90 frame',2300000,'TR90','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260346/glasses_jbal71.glb',TRUE),
+(2,'Modern Flex','VisionPro','Flexible TR90 frame',2300000,'TR90','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260346/glasses_jbal71.glb','AVAILABLE','NEW',TRUE),
 
-(2,'Wayfarer Legend','SunElite','Classic wayfarer style',2800000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260326/wayfarer_sunglasses_eyeglasses_rims_qe4yzv.glb',TRUE),
+(2,'Wayfarer Legend','SunElite','Classic wayfarer style',2800000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260326/wayfarer_sunglasses_eyeglasses_rims_qe4yzv.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Sleek Vision 07','Optima','Slim stylish design',1750000,'Metal','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260324/glasses_07_ml2zlr.glb',TRUE),
+(2,'Sleek Vision 07','Optima','Slim stylish design',1750000,'Metal','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260324/glasses_07_ml2zlr.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Metro Style 3','VistaWear','Urban daily frame',1600000,'Plastic','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260259/glasses_3_lsyyec.glb',TRUE),
+(2,'Metro Style 3','VistaWear','Urban daily frame',1600000,'Plastic','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260259/glasses_3_lsyyec.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Titanium AirLite','RayVision','Ultra light titanium',3500000,'Titanium','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260256/titanium_frame_glass_oegsdw.glb',TRUE),
+(2,'Titanium AirLite','RayVision','Ultra light titanium',3500000,'Titanium','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260256/titanium_frame_glass_oegsdw.glb','AVAILABLE','OLD',TRUE),
 
-(1,'MetaQuest VR Glass','FutureSight','Smart VR eyewear frame',5200000,'Composite','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260211/oak_ley_metaquest_glasses_vr_oamqll.glb',TRUE),
+(1,'MetaQuest VR Glass','FutureSight','Smart VR eyewear frame',5200000,'Composite','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260211/oak_ley_metaquest_glasses_vr_oamqll.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Rounded Rectangle Pro','UrbanEyes','Rounded rectangle frame',2000000,'Acetate','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260210/rounded_rectangle_eyeglasses_kfmklb.glb',TRUE),
+(2,'Rounded Rectangle Pro','UrbanEyes','Rounded rectangle frame',2000000,'Acetate','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260210/rounded_rectangle_eyeglasses_kfmklb.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Moscot Zev Edition','HeritageOptic','Luxury handcrafted frame',4800000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260190/glasses_-_moscot_zev-tt_se_wjpswa.glb',TRUE),
+(2,'Moscot Zev Edition','HeritageOptic','Luxury handcrafted frame',4800000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260190/glasses_-_moscot_zev-tt_se_wjpswa.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Classic Vision 2','OptiCore','Everyday basic frame',1500000,'Plastic','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260190/glasses_2_swgysz.glb',TRUE),
+(2,'Classic Vision 2','OptiCore','Everyday basic frame',1500000,'Plastic','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260190/glasses_2_swgysz.glb','AVAILABLE','OLD',TRUE),
 
-(2,'RayBan Inspired','LuxView','Premium iconic design',4200000,'Metal','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260188/ray_ban_glasses_rrozi3.glb',TRUE),
+(2,'RayBan Inspired','LuxView','Premium iconic design',4200000,'Metal','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260188/ray_ban_glasses_rrozi3.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Crystal Clear Eye','ClearSight','Transparent acetate frame',1900000,'Acetate','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260182/glass_eye_m6yobl.glb',TRUE),
+(2,'Crystal Clear Eye','ClearSight','Transparent acetate frame',1900000,'Acetate','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260182/glass_eye_m6yobl.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Specs Classic','SpecWorld','Traditional full-rim frame',1700000,'Metal','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260179/eyewear_specs_cdzo8u.glb',TRUE),
+(2,'Specs Classic','SpecWorld','Traditional full-rim frame',1700000,'Metal','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260179/eyewear_specs_cdzo8u.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Aviator Steel','SkyVision','Aviator style frame',3100000,'Stainless Steel','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260178/aviator_glasses_i47nag.glb',TRUE),
+(2,'Aviator Steel','SkyVision','Aviator style frame',3100000,'Stainless Steel','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260178/aviator_glasses_i47nag.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Rigel Frame','StarOptic','Premium lightweight frame',2600000,'TR90','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260164/glasses_rigel_bqekyu.glb',TRUE),
+(2,'Rigel Frame','StarOptic','Premium lightweight frame',2600000,'TR90','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260164/glasses_rigel_bqekyu.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Occhiali Milano','ItaliaEyes','Italian design frame',3900000,'Acetate','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260161/eyeglasses_-_occhiali_spakik.glb',TRUE),
+(2,'Occhiali Milano','ItaliaEyes','Italian design frame',3900000,'Acetate','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260161/eyeglasses_-_occhiali_spakik.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Elegant Line 09','NeoVision','Modern thin frame',2200000,'Metal','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260158/glasses_09_hdsqv7.glb',TRUE),
+(2,'Elegant Line 09','NeoVision','Modern thin frame',2200000,'Metal','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260158/glasses_09_hdsqv7.glb','AVAILABLE','OLD',TRUE),
 
-(2,'A01 Urban','StreetOptic','Affordable fashion frame',1400000,'Plastic','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260155/eyeglasses_a01_mzv0g8.glb',TRUE),
+(2,'A01 Urban','StreetOptic','Affordable fashion frame',1400000,'Plastic','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260155/eyeglasses_a01_mzv0g8.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Black Classic','DarkVision','Matte black elegant frame',2000000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260138/black_eyeglasses_qfrtem.glb',TRUE);
+(2,'Black Classic','DarkVision','Matte black elegant frame',2000000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260138/black_eyeglasses_qfrtem.glb','AVAILABLE','OLD',TRUE);
+
+INSERT INTO product_images (product_id, image_url, is_thumbnail) VALUES
+(1, 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1200&q=80', TRUE),
+(2, 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80', TRUE),
+(3, 'https://images.unsplash.com/photo-1577803645773-f96470509666?auto=format&fit=crop&w=1200&q=80', TRUE),
+(4, 'https://images.unsplash.com/photo-1591076482161-42ce6da69f67?auto=format&fit=crop&w=1200&q=80', TRUE),
+(5, 'https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=1200&q=80', TRUE),
+(6, 'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?auto=format&fit=crop&w=1200&q=80', TRUE);
 
 -- 2. PRODUCT_VARIANT
 -- SKU (10 ký tự) = [BR][SZ][CL][PID][RND]
@@ -342,40 +360,40 @@ INSERT INTO product_variants
 VALUES
 
 -- 1 Titanium Edge Pro
-(1,'RVSB01A7K2','Black','S',3200000,10,'2026-04-15',TRUE),
-(1,'RVMB01F3L8','Black','M',3260000,9,'2026-04-20',TRUE),
-(1,'RVLB01D1Q4','Black','L',3290000,11,'2026-04-25',TRUE),
-(1,'RVSS01T2Z8','Silver','S',3200000,8,'2026-04-28',TRUE),
-(1,'RVMS01H4P6','Silver','M',3255000,10,'2026-05-01',TRUE),
-(1,'RVLS01K9W3','Silver','L',3285000,9,'2026-05-04',TRUE),
+(1,'RVSB01A7K2','Black','S',3200000,0,'2026-04-15',TRUE),
+(1,'RVMB01F3L8','Black','M',3260000,0,'2026-04-20',TRUE),
+(1,'RVLB01D1Q4','Black','L',3290000,0,'2026-04-25',TRUE),
+(1,'RVSS01T2Z8','Silver','S',3200000,0,'2026-04-28',TRUE),
+(1,'RVMS01H4P6','Silver','M',3255000,0,'2026-05-01',TRUE),
+(1,'RVLS01K9W3','Silver','L',3285000,0,'2026-05-04',TRUE),
 
 -- 2 Safety Shield RX
-(2,'OSSC02J8P3','Clear','S',2500000,9,'2026-04-18',TRUE),
-(2,'OSMC02H4W6','Clear','M',2555000,11,'2026-04-21',TRUE),
-(2,'OSLC02K2X9','Clear','L',2590000,10,'2026-04-26',TRUE),
+(2,'OSSC02J8P3','Clear','S',2500000,0,'2026-04-18',TRUE),
+(2,'OSMC02H4W6','Clear','M',2555000,0,'2026-04-21',TRUE),
+(2,'OSLC02K2X9','Clear','L',2590000,0,'2026-04-26',TRUE),
 
 -- 3 Urban Classic 4
-(3,'VWSB03T7A1','Black','S',1800000,8,'2026-04-18',TRUE),
-(3,'VWMB03R4C6','Black','M',1855000,12,'2026-04-22',TRUE),
-(3,'VWLB03P1Z7','Black','L',1890000,9,'2026-04-27',TRUE),
-(3,'VWST03M8Q2','Tortoise','S',1800000,10,'2026-04-30',TRUE),
-(3,'VWMT03J3W5','Tortoise','M',1860000,9,'2026-05-02',TRUE),
-(3,'VWLT03F1E9','Tortoise','L',1895000,11,'2026-05-06',TRUE),
+(3,'VWSB03T7A1','Black','S',1800000,0,'2026-04-18',TRUE),
+(3,'VWMB03R4C6','Black','M',1855000,0,'2026-04-22',TRUE),
+(3,'VWLB03P1Z7','Black','L',1890000,0,'2026-04-27',TRUE),
+(3,'VWST03M8Q2','Tortoise','S',1800000,0,'2026-04-30',TRUE),
+(3,'VWMT03J3W5','Tortoise','M',1860000,0,'2026-05-02',TRUE),
+(3,'VWLT03F1E9','Tortoise','L',1895000,0,'2026-05-06',TRUE),
 
 -- 4 Minimal Frame 08
-(4,'NOSG04B6N3','Gold','S',2100000,9,'2026-04-30',TRUE),
-(4,'NOMG04D2L5','Gold','M',2160000,8,'2026-05-05',TRUE),
-(4,'NOLG04F8R2','Gold','L',2190000,10,'2026-05-10',TRUE),
+(4,'NOSG04B6N3','Gold','S',2100000,0,'2026-04-30',TRUE),
+(4,'NOMG04D2L5','Gold','M',2160000,0,'2026-05-05',TRUE),
+(4,'NOLG04F8R2','Gold','L',2190000,0,'2026-05-10',TRUE),
 
 -- 5 Retro Square 05
-(5,'CEST05H2A9','Tortoise','S',1950000,11,'2026-05-04',TRUE),
-(5,'CEMT05K4P1','Tortoise','M',2005000,9,'2026-05-07',TRUE),
-(5,'CELT05Q7W8','Tortoise','L',2040000,12,'2026-05-12',TRUE),
+(5,'CEST05H2A9','Tortoise','S',1950000,0,'2026-05-04',TRUE),
+(5,'CEMT05K4P1','Tortoise','M',2005000,0,'2026-05-07',TRUE),
+(5,'CELT05Q7W8','Tortoise','L',2040000,0,'2026-05-12',TRUE),
 
 -- 6 Modern Flex
-(6,'VPSB06K8J2','Black','S',2300000,10,'2026-05-01',TRUE),
-(6,'VPMB06D3H5','Black','M',2355000,9,'2026-05-04',TRUE),
-(6,'VPLB06L2Q8','Black','L',2390000,11,'2026-05-07',TRUE),
+(6,'VPSB06K8J2','Black','S',2300000,0,'2026-05-01',TRUE),
+(6,'VPMB06D3H5','Black','M',2355000,0,'2026-05-04',TRUE),
+(6,'VPLB06L2Q8','Black','L',2390000,0,'2026-05-07',TRUE),
 
 -- 7 Wayfarer Legend
 (7,'SESB07A8M2','Black','S',2800000,9,'2026-05-02',TRUE),

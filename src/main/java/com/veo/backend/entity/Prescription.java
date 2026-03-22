@@ -1,5 +1,6 @@
 package com.veo.backend.entity;
 
+import com.veo.backend.enums.PrescriptionReviewStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,7 +25,17 @@ public class Prescription {
     @JoinColumn(name = "order_id")
     private Order order;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lens_product_id")
+    private LensProduct lensProduct;
+
     private String prescriptionImageUrl;
+
+    private String lensNameSnapshot;
+
+    private BigDecimal lensPriceSnapshot;
+
+    private String lensDescriptionSnapshot;
 
     private BigDecimal sphereOd;
 
@@ -40,11 +51,17 @@ public class Prescription {
 
     private BigDecimal pd;
 
+    @Enumerated(EnumType.STRING)
+    private PrescriptionReviewStatus reviewStatus;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "verified_by")
     private User verifiedBy;
 
     private LocalDateTime verifiedAt;
 
-    private String staffNote;
+    @Column(name = "staff_note")
+    private String reviewNote;
+
+    private LocalDateTime createdAt;
 }
