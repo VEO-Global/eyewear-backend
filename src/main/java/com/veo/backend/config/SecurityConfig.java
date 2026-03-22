@@ -45,6 +45,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/consultation-appointments").permitAll()
+                        .requestMatchers("/api/user/favorites/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/products/*/favorite-status", "/products/*/favorite-status").authenticated()
 
                         // 2. NHỮNG API PUBLIC CHO CUSTOMER
                         .requestMatchers(HttpMethod.GET, "/api/products/**", "/products/**", "/api/variants/**", "/api/categories/**", "/api/lens_products/**", "/api/lens-products/**", "/lens-products/**", "/api/locations/**").permitAll()

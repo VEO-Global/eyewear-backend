@@ -8,6 +8,7 @@ import com.veo.backend.entity.CartItem;
 import com.veo.backend.entity.LensProduct;
 import com.veo.backend.entity.ProductVariant;
 import com.veo.backend.entity.User;
+import com.veo.backend.enums.ProductCatalogType;
 import com.veo.backend.exception.AppException;
 import com.veo.backend.exception.ErrorCode;
 import com.veo.backend.repository.CartItemRepository;
@@ -66,10 +67,6 @@ public class CartServiceImpl implements CartService {
         ProductVariant variant = variantRepository.findById(request.getProductVariantId())
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_VARIANT_NOT_FOUND, "Product variant not found"));
 
-        if (variant.getStockQuantity() < request.getQuantity()) {
-            throw new AppException(ErrorCode.PRODUCT_VARIANT_OUT_STOCK, "Product variant out of stock");
-        }
-
         final LensProduct lensProduct = request.getLensProductId() == null ? null : lensProductRepository.findById(request.getLensProductId())
                 .orElseThrow(() -> new AppException(ErrorCode.LENS_PRODUCT_NOT_FOUND, "Lens product not found"));
 
@@ -91,9 +88,11 @@ public class CartServiceImpl implements CartService {
         CartItem cartItem;
         if (existingItemOpt.isPresent()) {
             cartItem = existingItemOpt.get();
+            validateCartQuantity(variant, cartItem.getQuantity() + request.getQuantity());
             cartItem.setQuantity(cartItem.getQuantity() + request.getQuantity());
             cartItemRepository.save(cartItem);
         } else {
+            validateCartQuantity(variant, request.getQuantity());
             cartItem = new CartItem();
             cartItem.setCart(cart);
             cartItem.setProductVariant(variant);
@@ -106,6 +105,22 @@ public class CartServiceImpl implements CartService {
         cartRepository.save(cart);
 
         return mapToItemResponse(cartItem);
+    }
+
+    private void validateCartQuantity(ProductVariant variant, int requestedQuantity) {
+        if (isPreorderVariant(variant)) {
+            return;
+        }
+
+        int stockQuantity = variant.getStockQuantity() == null ? 0 : variant.getStockQuantity();
+        if (stockQuantity < requestedQuantity) {
+            throw new AppException(ErrorCode.PRODUCT_VARIANT_OUT_STOCK, "Product variant out of stock");
+        }
+    }
+
+    private boolean isPreorderVariant(ProductVariant variant) {
+        return variant.getProduct() != null
+                && variant.getProduct().getCatalogType() == ProductCatalogType.NEW;
     }
 
     @Override

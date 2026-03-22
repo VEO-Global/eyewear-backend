@@ -32,15 +32,21 @@ public class ProductResponse {
 
     private String imageUrl;
 
+    private String image;
+
     private ProductStatus status;
 
     private ProductCatalogType catalogType;
+
+    private Integer stockQuantity;
 
     private Boolean isActive;
 
     private LocalDateTime createdAt;
 
     private Long  categoryId;
+
+    private List<ProductImageResponse> images;
 
     private List<ProductVariantResponse> variants;
 }

@@ -14,6 +14,7 @@ import com.veo.backend.entity.*;
 import com.veo.backend.enums.OrderStatus;
 import com.veo.backend.enums.OrderType;
 import com.veo.backend.enums.PaymentStatus;
+import com.veo.backend.enums.ProductCatalogType;
 import com.veo.backend.enums.PrescriptionOption;
 import com.veo.backend.enums.PrescriptionReviewStatus;
 import com.veo.backend.exception.AppException;
@@ -62,13 +63,11 @@ public class OrderServiceImpl implements OrderService {
         validatePrescriptionRequest(request, prescriptionOption);
         validateShippingRequest(request);
 
-        OrderType orderType = prescriptionOption == PrescriptionOption.WITH_PRESCRIPTION
-                ? OrderType.PRESCRIPTION
-                : OrderType.NORMAL;
         LensProduct selectedLens = resolveSelectedLens(request, prescriptionOption);
 
         List<OrderItem>  orderItems = new ArrayList<>();
         BigDecimal itemsSubtotal = BigDecimal.ZERO;
+        boolean hasPreorderItem = false;
 
         for (OrderItemRequest itemRequest : request.getItems()){
             Long variantId = itemRequest.resolveVariantId();
@@ -77,7 +76,11 @@ public class OrderServiceImpl implements OrderService {
 
             Integer quantity = itemRequest.getQuantity();
 
-            if (orderType != OrderType.PRE_ORDER) {
+            if (isPreorderVariant(variant)) {
+                hasPreorderItem = true;
+            }
+
+            if (!isPreorderVariant(variant)) {
                 if (variant.getStockQuantity() < quantity) {
                     throw new AppException(ErrorCode.PRODUCT_VARIANT_OUT_STOCK, "Product variant out of stock");
                 }
@@ -96,6 +99,12 @@ public class OrderServiceImpl implements OrderService {
             orderItem.setPrice(itemTotal);
             orderItems.add(orderItem);
         }
+
+        OrderType orderType = hasPreorderItem
+                ? OrderType.PRE_ORDER
+                : prescriptionOption == PrescriptionOption.WITH_PRESCRIPTION
+                ? OrderType.PRESCRIPTION
+                : OrderType.NORMAL;
 
         BigDecimal lensPrice = selectedLens != null ? defaultAmount(selectedLens.getPrice()) : BigDecimal.ZERO;
         BigDecimal shippingFee = resolveShippingFee();
@@ -587,6 +596,11 @@ public class OrderServiceImpl implements OrderService {
 
     private BigDecimal defaultAmount(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private boolean isPreorderVariant(ProductVariant variant) {
+        return variant.getProduct() != null
+                && variant.getProduct().getCatalogType() == ProductCatalogType.NEW;
     }
 
     private List<OrderStatus> resolveStatuses(String tab, String status) {

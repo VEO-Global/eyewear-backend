@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Getter
 @Setter
@@ -35,4 +36,6 @@ public class ProductUpdateRequest {
     private ProductStatus status;
 
     private ProductCatalogType catalogType;
+
+    private List<ProductImageRequest> images;
 }

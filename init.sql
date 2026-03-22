@@ -67,11 +67,31 @@ CREATE TABLE products (
     FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 
+CREATE TABLE favorite_products (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_favorite_products_user_product UNIQUE (user_id, product_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_favorite_products_user_id
+    ON favorite_products (user_id);
+
+CREATE INDEX idx_favorite_products_product_id
+    ON favorite_products (product_id);
+
 CREATE TABLE product_images (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     product_id BIGINT NOT NULL,
     image_url TEXT NOT NULL,
-    is_thumbnail BOOLEAN DEFAULT FALSE,
+    alt_text VARCHAR(255),
+    is_primary BOOLEAN DEFAULT FALSE,
+    sort_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
@@ -294,59 +314,68 @@ INSERT INTO consultation_appointments (phone_number, appointment_time, status) V
 INSERT INTO products 
 (category_id, name, brand, description, base_price, material, gender, model_3d_url, status, catalog_type, is_active)
 VALUES
-(2,'Titanium Edge Pro','RayVision','Premium titanium frame',3200000,'Titanium','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260443/titanium_frame_glass_f1ffh9.glb','AVAILABLE','NEW',TRUE),
+(2,'Gọng Titan Cao Cấp','RayVision','Gọng kính titan cao cấp, bền nhẹ và sang trọng.',3200000,'Titanium','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260443/titanium_frame_glass_f1ffh9.glb','AVAILABLE','NEW',TRUE),
 
-(2,'Safety Shield RX','OptiSafe','Protective prescription glasses',2500000,'Polycarbonate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260366/safety_glasses_prescription_mkbtst.glb','AVAILABLE','NEW',TRUE),
+(2,'Kính Bảo Hộ Cận','OptiSafe','Gọng kính bảo hộ dành cho người cần lắp tròng cận.',2500000,'Polycarbonate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260366/safety_glasses_prescription_mkbtst.glb','AVAILABLE','NEW',TRUE),
 
-(2,'Urban Classic 4','VistaWear','Modern casual frame',1800000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260353/glasses_4_tsxlvu.glb','AVAILABLE','NEW',TRUE),
+(2,'Gọng Phố Cổ 4','VistaWear','Mẫu gọng đeo hằng ngày với phong cách hiện đại, dễ phối đồ.',1800000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260353/glasses_4_tsxlvu.glb','AVAILABLE','NEW',TRUE),
 
-(2,'Minimal Frame 08','NeoOptic','Lightweight elegant frame',2100000,'Stainless Steel','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260352/glasses_08_ma8hbq.glb','AVAILABLE','NEW',TRUE),
+(2,'Gọng Tối Giản 08','NeoOptic','Thiết kế thanh lịch, mỏng nhẹ và phù hợp nhiều khuôn mặt.',2100000,'Stainless Steel','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260352/glasses_08_ma8hbq.glb','AVAILABLE','NEW',TRUE),
 
-(2,'Retro Square 05','ClassicEyes','Vintage square design',1950000,'Acetate','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260348/glasses_05_eqqwbl.glb','AVAILABLE','NEW',TRUE),
+(2,'Gọng Vuông Cổ Điển 05','ClassicEyes','Thiết kế vuông mang hơi hướng cổ điển, đậm cá tính.',1950000,'Acetate','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260348/glasses_05_eqqwbl.glb','AVAILABLE','NEW',TRUE),
 
-(2,'Modern Flex','VisionPro','Flexible TR90 frame',2300000,'TR90','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260346/glasses_jbal71.glb','AVAILABLE','NEW',TRUE),
+(2,'Gọng Dẻo Hiện Đại','VisionPro','Gọng TR90 dẻo nhẹ, phù hợp sử dụng hằng ngày.',2300000,'TR90','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260346/glasses_jbal71.glb','AVAILABLE','NEW',TRUE),
 
-(2,'Wayfarer Legend','SunElite','Classic wayfarer style',2800000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260326/wayfarer_sunglasses_eyeglasses_rims_qe4yzv.glb','AVAILABLE','OLD',TRUE),
+(2,'Wayfarer Huyền Thoại','SunElite','Phong cách wayfarer kinh điển, luôn hợp xu hướng.',2800000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260326/wayfarer_sunglasses_eyeglasses_rims_qe4yzv.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Sleek Vision 07','Optima','Slim stylish design',1750000,'Metal','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260324/glasses_07_ml2zlr.glb','AVAILABLE','OLD',TRUE),
+(2,'Gọng Thanh Mảnh 07','Optima','Thiết kế mảnh, gọn và tinh tế cho phong cách nữ tính.',1750000,'Metal','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260324/glasses_07_ml2zlr.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Metro Style 3','VistaWear','Urban daily frame',1600000,'Plastic','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260259/glasses_3_lsyyec.glb','AVAILABLE','OLD',TRUE),
+(2,'Phong Cách Đô Thị 3','VistaWear','Gọng kính đơn giản, phù hợp đi học, đi làm mỗi ngày.',1600000,'Plastic','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260259/glasses_3_lsyyec.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Titanium AirLite','RayVision','Ultra light titanium',3500000,'Titanium','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260256/titanium_frame_glass_oegsdw.glb','AVAILABLE','OLD',TRUE),
+(2,'Titan AirLite Siêu Nhẹ','RayVision','Gọng titan siêu nhẹ, đeo lâu vẫn thoải mái.',3500000,'Titanium','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260256/titanium_frame_glass_oegsdw.glb','AVAILABLE','OLD',TRUE),
 
-(1,'MetaQuest VR Glass','FutureSight','Smart VR eyewear frame',5200000,'Composite','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260211/oak_ley_metaquest_glasses_vr_oamqll.glb','AVAILABLE','OLD',TRUE),
+(1,'Kính Thông Minh MetaQuest','FutureSight','Mẫu kính thông minh lấy cảm hứng từ thiết bị VR hiện đại.',5200000,'Composite','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260211/oak_ley_metaquest_glasses_vr_oamqll.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Rounded Rectangle Pro','UrbanEyes','Rounded rectangle frame',2000000,'Acetate','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260210/rounded_rectangle_eyeglasses_kfmklb.glb','AVAILABLE','OLD',TRUE),
+(2,'Gọng Chữ Nhật Bo Góc','UrbanEyes','Thiết kế chữ nhật bo tròn, dễ đeo và trẻ trung.',2000000,'Acetate','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260210/rounded_rectangle_eyeglasses_kfmklb.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Moscot Zev Edition','HeritageOptic','Luxury handcrafted frame',4800000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260190/glasses_-_moscot_zev-tt_se_wjpswa.glb','AVAILABLE','OLD',TRUE),
+(2,'Phiên Bản Zev Cao Cấp','HeritageOptic','Gọng thủ công cao cấp dành cho khách thích sự sang trọng.',4800000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260190/glasses_-_moscot_zev-tt_se_wjpswa.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Classic Vision 2','OptiCore','Everyday basic frame',1500000,'Plastic','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260190/glasses_2_swgysz.glb','AVAILABLE','OLD',TRUE),
+(2,'Gọng Cơ Bản 2','OptiCore','Mẫu gọng cơ bản, dễ đeo và phù hợp nhu cầu hằng ngày.',1500000,'Plastic','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260190/glasses_2_swgysz.glb','AVAILABLE','OLD',TRUE),
 
-(2,'RayBan Inspired','LuxView','Premium iconic design',4200000,'Metal','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260188/ray_ban_glasses_rrozi3.glb','AVAILABLE','OLD',TRUE),
+(2,'Phong Cách Biểu Tượng','LuxView','Thiết kế cao cấp lấy cảm hứng từ các mẫu kính kinh điển.',4200000,'Metal','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260188/ray_ban_glasses_rrozi3.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Crystal Clear Eye','ClearSight','Transparent acetate frame',1900000,'Acetate','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260182/glass_eye_m6yobl.glb','AVAILABLE','OLD',TRUE),
+(2,'Gọng Trong Suốt','ClearSight','Gọng acetate trong suốt trẻ trung và hiện đại.',1900000,'Acetate','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260182/glass_eye_m6yobl.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Specs Classic','SpecWorld','Traditional full-rim frame',1700000,'Metal','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260179/eyewear_specs_cdzo8u.glb','AVAILABLE','OLD',TRUE),
+(2,'Gọng Truyền Thống','SpecWorld','Mẫu gọng full-rim truyền thống, chắc chắn và dễ đeo.',1700000,'Metal','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260179/eyewear_specs_cdzo8u.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Aviator Steel','SkyVision','Aviator style frame',3100000,'Stainless Steel','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260178/aviator_glasses_i47nag.glb','AVAILABLE','OLD',TRUE),
+(2,'Phi Công Thép','SkyVision','Mẫu gọng dáng aviator mạnh mẽ và thời trang.',3100000,'Stainless Steel','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260178/aviator_glasses_i47nag.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Rigel Frame','StarOptic','Premium lightweight frame',2600000,'TR90','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260164/glasses_rigel_bqekyu.glb','AVAILABLE','OLD',TRUE),
+(2,'Gọng Rigel','StarOptic','Gọng nhẹ cao cấp, đeo êm và bền cho nhu cầu lâu dài.',2600000,'TR90','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260164/glasses_rigel_bqekyu.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Occhiali Milano','ItaliaEyes','Italian design frame',3900000,'Acetate','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260161/eyeglasses_-_occhiali_spakik.glb','AVAILABLE','OLD',TRUE),
+(2,'Gọng Milano','ItaliaEyes','Thiết kế mang cảm hứng Ý, thanh lịch và thời trang.',3900000,'Acetate','Female','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260161/eyeglasses_-_occhiali_spakik.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Elegant Line 09','NeoVision','Modern thin frame',2200000,'Metal','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260158/glasses_09_hdsqv7.glb','AVAILABLE','OLD',TRUE),
+(2,'Đường Nét Thanh Lịch 09','NeoVision','Mẫu gọng mảnh với đường nét hiện đại, tinh gọn.',2200000,'Metal','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260158/glasses_09_hdsqv7.glb','AVAILABLE','OLD',TRUE),
 
-(2,'A01 Urban','StreetOptic','Affordable fashion frame',1400000,'Plastic','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260155/eyeglasses_a01_mzv0g8.glb','AVAILABLE','OLD',TRUE),
+(2,'A01 Phố Thị','StreetOptic','Mẫu gọng thời trang giá tốt, phù hợp người trẻ.',1400000,'Plastic','Male','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260155/eyeglasses_a01_mzv0g8.glb','AVAILABLE','OLD',TRUE),
 
-(2,'Black Classic','DarkVision','Matte black elegant frame',2000000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260138/black_eyeglasses_qfrtem.glb','AVAILABLE','OLD',TRUE);
+(2,'Đen Cổ Điển','DarkVision','Gọng đen nhám thanh lịch, phù hợp nhiều phong cách.',2000000,'Acetate','Unisex','https://res.cloudinary.com/dw4q0ajrr/image/upload/v1772260138/black_eyeglasses_qfrtem.glb','AVAILABLE','OLD',TRUE);
 
-INSERT INTO product_images (product_id, image_url, is_thumbnail) VALUES
-(1, 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1200&q=80', TRUE),
-(2, 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80', TRUE),
-(3, 'https://images.unsplash.com/photo-1577803645773-f96470509666?auto=format&fit=crop&w=1200&q=80', TRUE),
-(4, 'https://images.unsplash.com/photo-1591076482161-42ce6da69f67?auto=format&fit=crop&w=1200&q=80', TRUE),
-(5, 'https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=1200&q=80', TRUE),
-(6, 'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?auto=format&fit=crop&w=1200&q=80', TRUE);
+INSERT INTO product_images (product_id, image_url, alt_text, is_primary, sort_order) VALUES
+(1, 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng titan cao cấp', TRUE, 0),
+(1, 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=80', 'Góc nghiêng trái gọng titan cao cấp', FALSE, 1),
+(1, 'https://images.unsplash.com/photo-1508296695146-257a814070b4?auto=format&fit=crop&w=1200&q=80', 'Cận cảnh mặt trước gọng titan cao cấp', FALSE, 2),
+(2, 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80', 'Góc chính kính bảo hộ cận', TRUE, 0),
+(2, 'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?auto=format&fit=crop&w=1200&q=80', 'Cận cảnh tròng kính bảo hộ cận', FALSE, 1),
+(3, 'https://images.unsplash.com/photo-1577803645773-f96470509666?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng phố cổ 4', TRUE, 0),
+(3, 'https://images.unsplash.com/photo-1591076482161-42ce6da69f67?auto=format&fit=crop&w=1200&q=80', 'Góc nghiêng gọng phố cổ 4', FALSE, 1),
+(4, 'https://images.unsplash.com/photo-1591076482161-42ce6da69f67?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng tối giản 08', TRUE, 0),
+(5, 'https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng vuông cổ điển 05', TRUE, 0),
+(6, 'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng dẻo hiện đại', TRUE, 0),
+(6, 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1200&q=80', 'Góc nghiêng gọng dẻo hiện đại', FALSE, 1),
+(7, 'https://images.unsplash.com/photo-1508296695146-257a814070b4?auto=format&fit=crop&w=1200&q=80', 'Góc chính wayfarer huyền thoại', TRUE, 0),
+(8, 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng thanh mảnh 07', TRUE, 0),
+(9, 'https://images.unsplash.com/photo-1508296695146-257a814070b4?auto=format&fit=crop&w=1200&q=80', 'Góc chính phong cách đô thị 3', TRUE, 0),
+(10, 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=80', 'Góc chính titan airlite siêu nhẹ', TRUE, 0);
 
 -- 2. PRODUCT_VARIANT
 -- SKU (10 ký tự) = [BR][SZ][CL][PID][RND]
@@ -603,24 +632,24 @@ INSERT INTO carts (user_id, created_at) VALUES
 INSERT INTO lens_products
 (name, type, refraction_index, description, price, is_active)
 VALUES
-('Single Vision Lens','Vision Correction',1.50,'Basic lens correcting a single field of vision (near or far).',500000,TRUE),
-('Bifocal Lens','Vision Correction',1.50,'Lens with two optical powers for near and distance vision.',900000,TRUE),
-('Trifocal Lens','Vision Correction',1.50,'Lens providing three viewing zones: distance, intermediate and near.',1200000,TRUE),
-('Progressive Lens','Vision Correction',1.60,'No-line multifocal lens providing smooth transition between distances.',2500000,TRUE),
-('Photochromic Lens','Adaptive Lens',1.56,'Lens that darkens automatically under sunlight and clears indoors.',1800000,TRUE),
-('Polarized Lens','Sun Protection',1.56,'Lens reducing glare from reflective surfaces like water or roads.',1600000,TRUE),
-('Blue Light Blocking Lens','Digital Protection',1.56,'Lens designed to filter blue light from digital screens.',900000,TRUE),
-('High-Index Lens','Thin Lens',1.67,'Thinner and lighter lens suitable for high prescription.',2200000,TRUE),
-('Aspheric Lens','Optical Design',1.60,'Flatter lens design reducing distortion and improving appearance.',2000000,TRUE),
-('Anti-Reflective Lens','Lens Coating',1.50,'Lens with coating that reduces glare and reflections.',700000,TRUE),
-('Polycarbonate Lens','Impact Resistant',1.59,'Lightweight and highly impact-resistant lens.',1200000,TRUE),
-('Trivex Lens','Impact Resistant',1.53,'Advanced lightweight lens with excellent clarity and strength.',1500000,TRUE),
-('Scratch-Resistant Lens','Lens Coating',1.50,'Lens coated to resist surface scratches.',650000,TRUE),
-('UV Protection Lens','Protective Lens',1.50,'Lens blocking harmful ultraviolet radiation.',750000,TRUE),
-('Driving Lens','Special Purpose',1.56,'Lens optimized for driving with improved contrast and glare reduction.',1100000,TRUE),
-('Computer Lens','Special Purpose',1.56,'Lens designed for intermediate distance used with computers.',950000,TRUE),
-('Reading Lens','Vision Correction',1.50,'Lens optimized for near vision reading tasks.',600000,TRUE),
-('Safety Lens','Protective Lens',1.59,'Durable lens used in industrial safety glasses.',1300000,TRUE);
+('Tròng Đơn Tròng','Vision Correction',1.50,'Tròng cơ bản hỗ trợ điều chỉnh một tầm nhìn, gần hoặc xa.',500000,TRUE),
+('Tròng Hai Tròng','Vision Correction',1.50,'Tròng có hai vùng nhìn, hỗ trợ nhìn gần và nhìn xa.',900000,TRUE),
+('Tròng Ba Tròng','Vision Correction',1.50,'Tròng có ba vùng nhìn gồm xa, trung gian và gần.',1200000,TRUE),
+('Tròng Đa Tròng','Vision Correction',1.60,'Tròng đa tròng không vạch, chuyển vùng nhìn mượt mà.',2500000,TRUE),
+('Tròng Đổi Màu','Adaptive Lens',1.56,'Tròng tự động sẫm màu khi ra nắng và trong lại khi ở trong nhà.',1800000,TRUE),
+('Tròng Phân Cực','Sun Protection',1.56,'Tròng giảm chói từ các bề mặt phản chiếu như đường hoặc mặt nước.',1600000,TRUE),
+('Tròng Chống Ánh Sáng Xanh','Digital Protection',1.56,'Tròng hỗ trợ lọc ánh sáng xanh từ màn hình điện tử.',900000,TRUE),
+('Tròng Chiết Suất Cao','Thin Lens',1.67,'Tròng mỏng nhẹ hơn, phù hợp người có độ kính cao.',2200000,TRUE),
+('Tròng Phi Cầu','Optical Design',1.60,'Thiết kế tròng phẳng hơn, giảm méo ảnh và tăng thẩm mỹ.',2000000,TRUE),
+('Tròng Chống Phản Quang','Lens Coating',1.50,'Tròng phủ lớp chống chói và giảm phản xạ ánh sáng.',700000,TRUE),
+('Tròng Polycarbonate','Impact Resistant',1.59,'Tròng nhẹ và có khả năng chịu va đập tốt.',1200000,TRUE),
+('Tròng Trivex','Impact Resistant',1.53,'Tròng cao cấp nhẹ, trong và bền chắc.',1500000,TRUE),
+('Tròng Chống Trầy','Lens Coating',1.50,'Tròng được phủ lớp giúp hạn chế trầy xước bề mặt.',650000,TRUE),
+('Tròng Chống Tia UV','Protective Lens',1.50,'Tròng giúp ngăn tia cực tím có hại cho mắt.',750000,TRUE),
+('Tròng Lái Xe','Special Purpose',1.56,'Tròng tối ưu cho việc lái xe với khả năng tăng tương phản và giảm chói.',1100000,TRUE),
+('Tròng Dùng Máy Tính','Special Purpose',1.56,'Tròng tối ưu cho khoảng nhìn trung gian khi làm việc với máy tính.',950000,TRUE),
+('Tròng Đọc Sách','Vision Correction',1.50,'Tròng hỗ trợ nhìn gần, phù hợp cho nhu cầu đọc sách.',600000,TRUE),
+('Tròng Bảo Hộ','Protective Lens',1.59,'Tròng bền chắc dùng cho kính bảo hộ trong môi trường làm việc.',1300000,TRUE);
 
 INSERT INTO cart_items (cart_id, product_variant_id, lens_product_id, quantity) VALUES
 -- Cart 1 (PRESCRIPTION)
