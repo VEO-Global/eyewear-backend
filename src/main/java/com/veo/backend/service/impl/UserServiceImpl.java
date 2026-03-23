@@ -106,11 +106,11 @@ public class UserServiceImpl implements UserService {
         res.setFullName(user.getFullName());
         res.setPhone(user.getPhone());
         if (defaultAddress != null) {
-            res.setAddress(defaultAddress.getAddressLine());
+            res.setAddressLine(defaultAddress.getAddressLine());
             res.setAddressDetail(blankToNull(defaultAddress.getAddressDetail()));
             res.setWard(blankToNull(defaultAddress.getWard()));
             res.setDistrict(blankToNull(defaultAddress.getDistrict()));
-            res.setProvince(blankToNull(defaultAddress.getCity()));
+            res.setCity(blankToNull(defaultAddress.getCity()));
         }
         res.setAvatarUrl(user.getAvatarUrl());
         res.setIsActive(user.getIsActive());

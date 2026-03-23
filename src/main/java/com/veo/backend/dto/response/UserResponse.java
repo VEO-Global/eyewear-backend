@@ -12,11 +12,11 @@ public class UserResponse {
     private String email;
     private String fullName;
     private String phone;
-    private String address;
+    private String addressLine;
     private String addressDetail;
     private String ward;
     private String district;
-    private String province;
+    private String city;
     private String avatarUrl;
     private Boolean isActive;
     private String role;
