@@ -103,6 +103,6 @@ public class OperationOrderServiceImpl implements OperationOrderService {
                 .addressDetail(order.getAddressDetail())
                 .ward(order.getWard())
                 .district(order.getDistrict())
-                .province(order.getProvince());
+                .city(order.getCity());
     }
 }

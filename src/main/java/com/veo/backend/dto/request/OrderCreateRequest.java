@@ -22,7 +22,7 @@ public class OrderCreateRequest {
     @Valid
     private ShippingAddressRequest shippingAddress;
 
-    private String province;
+    private String city;
 
     private String district;
 

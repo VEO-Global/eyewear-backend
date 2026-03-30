@@ -5,8 +5,8 @@ import lombok.Data;
 
 @Data
 public class ShippingAddressRequest {
-    private String provinceCode;
-    private String provinceName;
+    private String cityCode;
+    private String cityName;
     private String districtCode;
     private String districtName;
     private String wardCode;
