@@ -121,11 +121,11 @@ public class OrderServiceImpl implements OrderService {
                 resolveAddressDetail(request),
                 resolveWard(request),
                 resolveDistrict(request),
-                resolveProvince(request)
+                resolveCity(request)
         );
 
         order.setShippingAddress(builtAddress);
-        order.setProvince(resolveProvince(request));
+        order.setCity(resolveCity(request));
         order.setDistrict(resolveDistrict(request));
         order.setWard(resolveWard(request));
         order.setAddressDetail(resolveAddressDetail(request));
@@ -283,7 +283,6 @@ public class OrderServiceImpl implements OrderService {
                 .findFirstByUserIdOrderByIsDefaultDescIdAsc(user.getId())
                 .orElseGet(() -> {
                     UserAddress newAddress = new UserAddress();
-                    newAddress.setUser(user);
                     newAddress.setIsDefault(true);
                     return newAddress;
                 });
@@ -292,8 +291,9 @@ public class OrderServiceImpl implements OrderService {
         userAddress.setAddressDetail(trimToNull(resolveAddressDetail(request)));
         userAddress.setWard(trimToNull(resolveWard(request)));
         userAddress.setDistrict(trimToNull(resolveDistrict(request)));
-        userAddress.setCity(defaultIfNull(trimToNull(resolveProvince(request)), ""));
+        userAddress.setCity(trimToNull(resolveCity(request)));
         userAddress.setIsDefault(true);
+
         userAddressRepository.save(userAddress);
     }
 
@@ -351,7 +351,7 @@ public class OrderServiceImpl implements OrderService {
                 .shippingFee(defaultAmount(order.getShippingFee()))
                 .discountAmount(defaultAmount(order.getDiscountAmount()))
                 .shippingAddress(order.getShippingAddress())
-                .province(order.getProvince())
+                .city(order.getCity())
                 .district(order.getDistrict())
                 .ward(order.getWard())
                 .addressDetail(order.getAddressDetail())
@@ -542,11 +542,11 @@ public class OrderServiceImpl implements OrderService {
                 .orElse(BigDecimal.valueOf(30000));
     }
 
-    private String resolveProvince(OrderCreateRequest request) {
-        if (request.getShippingAddress() != null && request.getShippingAddress().getProvinceName() != null) {
-            return request.getShippingAddress().getProvinceName();
+    private String resolveCity(OrderCreateRequest request) {
+        if (request.getShippingAddress() != null && request.getShippingAddress().getCityName() != null) {
+            return request.getShippingAddress().getCityName();
         }
-        return request.getProvince();
+        return request.getCity();
     }
 
     private String resolveDistrict(OrderCreateRequest request) {

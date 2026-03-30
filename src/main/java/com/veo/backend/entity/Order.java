@@ -49,7 +49,7 @@ public class Order {
 
     private String shippingAddress;
 
-    private String province;
+    private String city;
 
     private String district;
 

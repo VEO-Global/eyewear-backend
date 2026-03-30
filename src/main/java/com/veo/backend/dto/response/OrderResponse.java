@@ -32,7 +32,7 @@ public class OrderResponse {
     private BigDecimal finalAmount;
     private PaymentStatus paymentStatus;
     private String shippingAddress;
-    private String province;
+    private String city;
     private String district;
     private String ward;
     private String addressDetail;
