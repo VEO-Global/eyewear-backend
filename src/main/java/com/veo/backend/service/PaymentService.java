@@ -19,4 +19,8 @@ public interface PaymentService {
     List<PaymentSummaryResponse> getPaymentsByUserId(Long userId);
 
     List<PaymentSummaryResponse> getAllPayments(Pageable pageable);
+
+    String createPayosPaymentLink(Long orderId);
+
+    void handlePayosReturn(Long orderCode);
 }

@@ -30,4 +30,5 @@ public class OrderCreateResponse {
     private PriceSummaryResponse priceSummary;
     private LocalDateTime createdAt;
     private String message;
+    private String checkoutUrl;
 }

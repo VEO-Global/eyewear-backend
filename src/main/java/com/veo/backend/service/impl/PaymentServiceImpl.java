@@ -18,10 +18,15 @@ import com.veo.backend.service.PaymentService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import vn.payos.PayOS;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 
 import org.springframework.data.domain.Pageable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,6 +35,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final PayOS payOS;
 
     @Override
     @Transactional
@@ -110,6 +116,85 @@ public class PaymentServiceImpl implements PaymentService {
     public List<PaymentSummaryResponse> getAllPayments(Pageable pageable) {
         return paymentRepository.findAll(pageable).stream()
                 .map(this::mapToSummary).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public String createPayosPaymentLink(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Order not found"));
+
+        // Chống trùng: nếu đã PAID rồi thì không tạo link nữa
+        Optional<Payment> existingPayment = paymentRepository.findByOrderId(orderId);
+        if (existingPayment.isPresent() && existingPayment.get().getStatus() == PaymentStatus.PAID) {
+            throw new AppException(ErrorCode.PAYMENT_ALREADY_CONFIRMED, "Payment already completed");
+        }
+
+        BigDecimal total = order.getTotalAmount()
+                .add(order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO)
+                .subtract(order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO);
+        int amount = total.intValue();
+
+        String description = "VEO Don " + order.getId();
+        String returnUrl = "http://localhost:8080/api/payments/payos/return";
+        String cancelUrl = "http://localhost:8080/api/payments/payos/cancel";
+
+        try {
+            CreatePaymentLinkRequest paymentRequest = CreatePaymentLinkRequest.builder()
+                    .orderCode(order.getId())
+                    .amount(Long.valueOf(amount))
+                    .description(description)
+                    .returnUrl(returnUrl)
+                    .cancelUrl(cancelUrl)
+                    .build();
+
+            CreatePaymentLinkResponse result = payOS.paymentRequests().create(paymentRequest);
+
+            // Lưu Payment record với status PENDING
+            Payment payment = existingPayment.orElse(new Payment());
+            payment.setOrder(order);
+            payment.setAmount(total);
+            payment.setMethod(PaymentMethod.PAYOS);
+            payment.setStatus(PaymentStatus.PENDING);
+            payment.setTransactionCode(String.valueOf(order.getId()));
+            payment.setExpiredAt(LocalDateTime.now().plusHours(24));
+            paymentRepository.save(payment);
+
+            return result.getCheckoutUrl();
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi tạo link thanh toán PayOS: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void handlePayosReturn(Long orderCode) {
+        Order order = orderRepository.findById(orderCode)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Order not found"));
+
+        Payment payment = paymentRepository.findByOrderId(order.getId())
+                .orElse(new Payment());
+
+        // Idempotent: nếu đã PAID rồi thì bỏ qua
+        if (payment.getStatus() == PaymentStatus.PAID) {
+            return;
+        }
+
+        // Đánh dấu thanh toán thành công (FAKE - không verify thật)
+        payment.setOrder(order);
+        payment.setAmount(order.getTotalAmount());
+        payment.setMethod(PaymentMethod.PAYOS);
+        payment.setStatus(PaymentStatus.PAID);
+        payment.setTransactionCode(String.valueOf(orderCode));
+        payment.setPaidAt(LocalDateTime.now());
+        paymentRepository.save(payment);
+
+        // Chuyển order sang trạng thái tiếp theo
+        if (order.getStatus() == OrderStatus.PENDING_PAYMENT) {
+            order.setStatus(OrderStatus.PENDING_VERIFICATION);
+            order.setUpdatedAt(LocalDateTime.now());
+            orderRepository.save(order);
+        }
     }
 
     private PaymentSummaryResponse mapToSummary(Payment p) {

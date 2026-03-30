@@ -21,6 +21,8 @@ import com.veo.backend.exception.AppException;
 import com.veo.backend.exception.ErrorCode;
 import com.veo.backend.repository.*;
 import com.veo.backend.service.OrderService;
+import com.veo.backend.service.PaymentService;
+import com.veo.backend.enums.PaymentMethod;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +49,7 @@ public class OrderServiceImpl implements OrderService {
     private final PrescriptionRepository prescriptionRepository;
     private final UserAddressRepository userAddressRepository;
     private final SystemConfigRepository systemConfigRepository;
+    private final PaymentService paymentService;
 
     @Override
     @Transactional
@@ -166,6 +169,12 @@ public class OrderServiceImpl implements OrderService {
             savedPrescription = prescriptionRepository.save(prescription);
         }
 
+        // --- PayOS: tạo link thanh toán nếu chọn PAYOS ---
+        String checkoutUrl = null;
+        if (PaymentMethod.PAYOS == request.getPaymentMethod()) {
+            checkoutUrl = paymentService.createPayosPaymentLink(order.getId());
+        }
+
         return OrderCreateResponse.builder()
                 .orderId(order.getId())
                 .totalAmount(subtotalAmount)
@@ -188,6 +197,7 @@ public class OrderServiceImpl implements OrderService {
                         .build())
                 .createdAt(order.getCreatedAt())
                 .message("Create order successfully")
+                .checkoutUrl(checkoutUrl)
                 .build();
     }
 
