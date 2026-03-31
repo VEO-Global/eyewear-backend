@@ -2,6 +2,7 @@ package com.veo.backend.dto.request;
 
 import com.veo.backend.enums.ProductCatalogType;
 import com.veo.backend.enums.ProductStatus;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,6 +29,11 @@ public class ProductUpdateRequest {
     private String gender;
 
     private String model3dUrl;
+
+    @JsonAlias("image")
+    private String imageUrl;
+
+    private List<String> imageUrls;
 
     private Boolean isActive;
 

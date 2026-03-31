@@ -2,6 +2,7 @@ package com.veo.backend.dto.request;
 
 import com.veo.backend.enums.ProductCatalogType;
 import com.veo.backend.enums.ProductStatus;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -34,6 +35,11 @@ public class ProductCreateRequest {
     private String gender;
 
     private String model3dUrl;
+
+    @JsonAlias("image")
+    private String imageUrl;
+
+    private List<String> imageUrls;
 
     private Integer quantity;
 

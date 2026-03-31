@@ -111,7 +111,8 @@ public class ProductServiceImpl implements ProductService {
                 .catalogType(request.getCatalogType() != null ? request.getCatalogType() : ProductCatalogType.OLD)
                 .build();
 
-        product.setImages(buildProductImages(product, request.getImages()));
+        List<ProductImageRequest> imageRequests = resolveCreateImageRequests(request);
+        product.setImages(buildProductImages(product, imageRequests));
 
         Product savedProduct = productRepository.save(product);
 
@@ -148,7 +149,7 @@ public class ProductServiceImpl implements ProductService {
         if (request.getIsActive() != null) product.setIsActive(request.getIsActive());
         if (request.getStatus() != null) product.setStatus(request.getStatus());
         if (request.getCatalogType() != null) product.setCatalogType(request.getCatalogType());
-        if (request.getImages() != null) product.setImages(buildProductImages(product, request.getImages()));
+        applyImageUpdate(product, request);
 
         return productResponseMapper.map(productRepository.save(product));
     }
@@ -232,6 +233,85 @@ public class ProductServiceImpl implements ProductService {
         return productImages;
     }
 
+    private List<ProductImageRequest> resolveCreateImageRequests(ProductCreateRequest request) {
+        String primaryImageUrl = firstNonBlank(request.getImageUrl(), null);
+        return composeImageRequests(request.getImages(), request.getImageUrls(), primaryImageUrl);
+    }
+
+    private void applyImageUpdate(Product product, ProductUpdateRequest request) {
+        String primaryImageUrl = firstNonBlank(request.getImageUrl(), null);
+        boolean hasStructuredUpdate = request.getImages() != null || request.getImageUrls() != null;
+
+        if (hasStructuredUpdate) {
+            List<ProductImageRequest> imageRequests = composeImageRequests(request.getImages(), request.getImageUrls(), primaryImageUrl);
+            product.setImages(buildProductImages(product, imageRequests));
+            return;
+        }
+
+        if (primaryImageUrl == null) {
+            return;
+        }
+
+        List<ProductImage> existingImages = product.getImages();
+        if (existingImages == null || existingImages.isEmpty()) {
+            List<ProductImageRequest> fallbackRequests = composeImageRequests(null, null, primaryImageUrl);
+            product.setImages(buildProductImages(product, fallbackRequests));
+            return;
+        }
+
+        ProductImage primaryImage = existingImages.stream()
+                .filter(Objects::nonNull)
+                .filter(image -> Boolean.TRUE.equals(image.getIsPrimary()) || Boolean.TRUE.equals(image.getIsThumbnail()))
+                .findFirst()
+                .orElse(existingImages.get(0));
+        primaryImage.setImageUrl(primaryImageUrl);
+    }
+
+    private List<ProductImageRequest> composeImageRequests(List<ProductImageRequest> images, List<String> imageUrls, String primaryImageUrl) {
+        List<ProductImageRequest> requests = new ArrayList<>();
+
+        if (images != null) {
+            requests.addAll(images);
+        } else if (imageUrls != null) {
+            int index = 0;
+            for (String url : imageUrls) {
+                String normalizedUrl = trimToNull(url);
+                if (normalizedUrl == null) {
+                    continue;
+                }
+                requests.add(new ProductImageRequest(null, normalizedUrl, null, index == 0, index));
+                index++;
+            }
+        }
+
+        if (primaryImageUrl == null) {
+            return requests;
+        }
+
+        for (ProductImageRequest request : requests) {
+            if (request == null) {
+                continue;
+            }
+
+            String requestUrl = trimToNull(request.getUrl());
+            if (primaryImageUrl.equals(requestUrl)) {
+                request.setIsPrimary(true);
+                if (request.getSortOrder() == null) {
+                    request.setSortOrder(0);
+                }
+                return requests;
+            }
+        }
+
+        ProductImageRequest primaryRequest = new ProductImageRequest();
+        primaryRequest.setUrl(primaryImageUrl);
+        primaryRequest.setIsPrimary(true);
+        primaryRequest.setSortOrder(0);
+        requests.add(0, primaryRequest);
+
+        return requests;
+    }
+
     private ProductImage resolveExistingProductImage(Product product, Long imageId) {
         ProductImage productImage = productImageRepository.findById(imageId).orElse(new ProductImage());
         if (productImage.getId() != null
@@ -250,6 +330,14 @@ public class ProductServiceImpl implements ProductService {
 
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String firstNonBlank(String first, String second) {
+        String normalizedFirst = trimToNull(first);
+        if (normalizedFirst != null) {
+            return normalizedFirst;
+        }
+        return trimToNull(second);
     }
 
     private boolean matchesKeyword(Product product, String keyword) {

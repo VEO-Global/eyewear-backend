@@ -27,6 +27,10 @@ public class ProductResponseMapper {
                 .toList();
 
         String resolvedImageUrl = resolveImageUrl(product);
+        List<String> resolvedImageUrls = imageResponses.stream()
+                .map(ProductImageResponse::getUrl)
+                .filter(Objects::nonNull)
+                .toList();
 
         return ProductResponse.builder()
                 .id(product.getId())
@@ -39,6 +43,7 @@ public class ProductResponseMapper {
                 .model3dUrl(product.getModel3dUrl())
                 .imageUrl(resolvedImageUrl)
                 .image(resolvedImageUrl)
+                .imageUrls(resolvedImageUrls)
                 .status(product.getStatus())
                 .catalogType(product.getCatalogType())
                 .stockQuantity(resolveStockQuantity(product))

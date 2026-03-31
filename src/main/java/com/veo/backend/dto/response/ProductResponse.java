@@ -34,6 +34,8 @@ public class ProductResponse {
 
     private String image;
 
+    private List<String> imageUrls;
+
     private ProductStatus status;
 
     private ProductCatalogType catalogType;
