@@ -33,7 +33,7 @@ public class PrescriptionReviewServiceImpl implements PrescriptionReviewService 
     @Override
     @Transactional(readOnly = true)
     public List<PrescriptionReviewResponse> getPendingPrescriptions() {
-        return prescriptionRepository.findByReviewStatusOrderByCreatedAtAsc(PrescriptionReviewStatus.PENDING)
+        return prescriptionRepository.findPendingForStaff()
                 .stream()
                 .map(this::mapResponse)
                 .toList();
@@ -63,8 +63,9 @@ public class PrescriptionReviewServiceImpl implements PrescriptionReviewService 
         Order order = prescription.getOrder();
         if (order != null) {
             order.setStatus(request.getReviewStatus() == PrescriptionReviewStatus.APPROVED
-                    ? OrderStatus.MANUFACTURING
+                    ? OrderStatus.PENDING_VERIFICATION
                     : OrderStatus.PENDING_VERIFICATION);
+            order.setUpdatedAt(LocalDateTime.now());
         }
 
         prescriptionRepository.save(prescription);
@@ -83,7 +84,7 @@ public class PrescriptionReviewServiceImpl implements PrescriptionReviewService 
                 .phoneNumber(order != null ? order.getPhoneNumber() : null)
                 .lens(mapLensResponse(prescription))
                 .prescription(mapPrescriptionResponse(prescription))
-                .reviewStatus(prescription.getReviewStatus())
+                .reviewStatus(resolveEffectiveReviewStatus(prescription))
                 .reviewNote(prescription.getReviewNote())
                 .reviewedBy(prescription.getVerifiedBy() != null ? prescription.getVerifiedBy().getFullName() : null)
                 .reviewedAt(prescription.getVerifiedAt())
@@ -115,8 +116,24 @@ public class PrescriptionReviewServiceImpl implements PrescriptionReviewService 
                 .axisOd(prescription.getAxisOd())
                 .axisOs(prescription.getAxisOs())
                 .pd(prescription.getPd())
-                .reviewStatus(prescription.getReviewStatus())
+                .reviewStatus(resolveEffectiveReviewStatus(prescription))
                 .reviewNote(prescription.getReviewNote())
                 .build();
+    }
+
+    private PrescriptionReviewStatus resolveEffectiveReviewStatus(Prescription prescription) {
+        if (prescription == null) {
+            return null;
+        }
+
+        if (prescription.getReviewStatus() != null) {
+            return prescription.getReviewStatus();
+        }
+
+        if (prescription.getVerifiedBy() != null || prescription.getVerifiedAt() != null) {
+            return PrescriptionReviewStatus.APPROVED;
+        }
+
+        return PrescriptionReviewStatus.PENDING;
     }
 }

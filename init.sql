@@ -870,11 +870,70 @@ SELECT * FROM eyewear_db.system_configs;INSERT INTO eyewear_db.system_configs (c
 ('homepage.featured_products_limit','8','Số sản phẩm nổi bật hiển thị trang chủ');
 -- BUSINESS_POLICIES
 INSERT INTO business_policies (type, title, content, is_active, updated_by) VALUES
-('PURCHASE', 'Purchase Policy', 'Customers may purchase products through official VEO channels. Orders are confirmed after successful payment or staff verification.', TRUE, 'system'),
-('RETURN', 'Return Policy', 'Customers can request returns within the allowed policy window for eligible products. Returned items must be unused and include the original accessories.', TRUE, 'system'),
-('WARRANTY', 'Warranty Policy', 'Warranty applies to manufacturing defects under the published warranty term. Damage caused by misuse or accidental impact is not covered.', TRUE, 'system'),
-('SHIPPING', 'Shipping Policy', 'Shipping fees and delivery time depend on destination and selected fulfillment method. Free shipping promotions are applied according to active campaigns.', TRUE, 'system'),
-('PRIVACY', 'Privacy Policy', 'Customer information is collected only for order fulfillment and service improvement. Personal data is protected and not shared outside permitted operational purposes.', TRUE, 'system');
+('PURCHASE', 'Purchase Policy', 'Khách hàng có thể đặt mua sản phẩm trực tiếp trên website hoặc tại cửa hàng EyeCare Store.
+Đối với đơn hàng kính thuốc, khách hàng cần cung cấp thông tin độ cận/chỉ số mắt chính xác hoặc sử dụng dịch vụ đo mắt tại cửa hàng.
+Một số sản phẩm yêu cầu đặt cọc trước (30% – 50%), đặc biệt là kính làm theo yêu cầu (custom lens).
+Sau khi đặt hàng thành công, hệ thống sẽ gửi xác nhận qua email hoặc số điện thoại.
+Đơn hàng chỉ được xử lý khi thông tin khách hàng đầy đủ và hợp lệ.
+Thời gian xử lý đơn hàng:
+Kính có sẵn: 1 – 2 ngày
+Kính theo yêu cầu: 3 – 5 ngày
+Khách hàng có trách nhiệm kiểm tra sản phẩm khi nhận hàng.', TRUE, 'system'),
+('RETURN', 'Return Policy', 'Khách hàng có thể yêu cầu đổi/trả trong vòng 7 ngày kể từ ngày nhận hàng.
+Điều kiện áp dụng:
+Sản phẩm lỗi từ nhà sản xuất
+Giao sai sản phẩm, sai độ kính
+Sản phẩm còn nguyên vẹn, chưa qua sử dụng (đối với đổi ý)
+Không áp dụng đổi trả đối với:
+Kính làm theo yêu cầu riêng (custom lens)
+Sản phẩm bị hư hỏng do người dùng
+Quy trình:
+Gửi yêu cầu đổi trả qua hệ thống hoặc hotline
+Cung cấp hình ảnh/video nếu cần
+Xác nhận từ hệ thống → tiến hành đổi/trả
+Hoàn tiền:
+Trong vòng 5 – 7 ngày làm việc
+Qua phương thức thanh toán ban đầu', TRUE, 'system'),
+('WARRANTY', 'Warranty Policy', 'Tất cả sản phẩm kính mắt được bảo hành từ 3 – 12 tháng tùy loại.
+Phạm vi bảo hành:
+Lỗi kỹ thuật từ nhà sản xuất
+Bong tróc lớp phủ tròng kính
+Lỏng ốc, lệch gọng do sản xuất
+Không bảo hành trong các trường hợp:
+Rơi vỡ, va đập mạnh
+Sử dụng sai cách
+Tự ý sửa chữa bên ngoài
+Dịch vụ hỗ trợ:
+Vệ sinh kính miễn phí
+Siết ốc, chỉnh gọng miễn phí trọn đời
+Thời gian xử lý bảo hành: 3 – 7 ngày', TRUE, 'system'),
+('SHIPPING', 'Shipping Policy', 'EyeCare Store hỗ trợ giao hàng toàn quốc.
+Thời gian giao hàng:
+Nội thành: 1 – 2 ngày
+Tỉnh thành khác: 2 – 5 ngày
+Phí vận chuyển:
+Miễn phí với đơn hàng từ 500.000đ
+Đơn dưới mức này sẽ tính phí theo khu vực
+Đối với kính theo yêu cầu:
+Thời gian giao hàng sẽ tính sau khi hoàn tất sản xuất
+Khách hàng được kiểm tra sản phẩm trước khi thanh toán (nếu hỗ trợ COD).
+Trường hợp giao hàng thất bại:
+Nhân viên sẽ liên hệ lại tối đa 2 lần
+Sau đó đơn hàng có thể bị hủy', TRUE, 'system'),
+('PRIVACY', 'Privacy Policy', 'EyeCare Store cam kết bảo mật tuyệt đối thông tin cá nhân của khách hàng.
+Thông tin thu thập bao gồm:
+Họ tên, số điện thoại, email
+Địa chỉ giao hàng
+Thông tin đơn hàng
+Mục đích sử dụng:   
+Xử lý đơn hàng
+Hỗ trợ khách hàng
+Cải thiện dịch vụ
+Cam kết:
+Không chia sẻ thông tin cho bên thứ ba nếu không có sự đồng ý
+Chỉ sử dụng cho mục đích nội bộ
+Dữ liệu được lưu trữ và bảo vệ bằng các biện pháp bảo mật phù hợp.
+Khách hàng có quyền yêu cầu chỉnh sửa hoặc xóa thông tin cá nhân bất kỳ lúc nào.', TRUE, 'system');
 
 --  ORDER 
 INSERT INTO orders

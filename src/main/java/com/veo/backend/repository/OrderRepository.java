@@ -43,5 +43,32 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     })
     Optional<Order> findWithUserById(Long id);
 
+    @EntityGraph(attributePaths = {
+            "items",
+            "items.productVariant",
+            "items.productVariant.product",
+            "items.lensProduct",
+            "user"
+    })
+    List<Order> findAllByOrderByCreatedAtDesc();
+
+    @EntityGraph(attributePaths = {
+            "items",
+            "items.productVariant",
+            "items.productVariant.product",
+            "items.lensProduct",
+            "user"
+    })
+    List<Order> findAllByStatusInOrderByCreatedAtDesc(Collection<OrderStatus> statuses);
+
+    @EntityGraph(attributePaths = {
+            "items",
+            "items.productVariant",
+            "items.productVariant.product",
+            "items.lensProduct",
+            "user"
+    })
+    Optional<Order> findDetailedById(Long id);
+
     List<Order> findByStatusIn(List<OrderStatus> statuses);
 }

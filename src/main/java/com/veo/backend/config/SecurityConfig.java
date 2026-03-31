@@ -51,12 +51,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/products/*/favorite-status", "/products/*/favorite-status").authenticated()
 
                         // 2. NHỮNG API PUBLIC CHO CUSTOMER
-                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/products/**", "/api/variants/**", "/api/categories/**", "/api/lens_products/**", "/api/lens-products/**", "/lens-products/**", "/api/locations/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/products/**", "/api/variants/**", "/api/categories/**", "/api/lens-products/**", "/api/locations/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/orders/my", "/api/orders/*").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/orders/my", "/orders/*").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.POST, "/api/orders", "/api/orders/checkout", "/orders", "/orders/checkout").hasRole("CUSTOMER")
                         .requestMatchers("/api/staff/consultation-appointments/**").hasAnyRole("SALES", "OPERATIONS", "MANAGER", "ADMIN")
-                        .requestMatchers("/api/staff/prescriptions/**", "/api/staff/orders/*/prescription", "/staff/prescriptions/**", "/staff/orders/*/prescription").hasAnyRole("SALES", "MANAGER", "ADMIN")
+                        .requestMatchers("/api/staff/prescriptions/**", "/api/staff/orders/*/prescription").hasAnyRole("SALES", "MANAGER", "ADMIN")
+                        .requestMatchers("/api/staff/orders/**").hasAnyRole("SALES", "OPERATIONS", "MANAGER", "ADMIN")
                         .requestMatchers("/api/notifications/**").hasAnyRole("CUSTOMER", "ADMIN", "MANAGER", "SALES", "OPERATIONS")
 
                         // 3. XEM PROFILE (CẦN LOGIN)
@@ -65,9 +66,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/user/profile").authenticated()
 
                         // 4. QUYỀN CỦA MANAGER (QUẢN LÝ SẢN PHẨM)
-                        .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/variants/**", "/api/lens_products/**", "/api/lens-products/**", "/api/categories", "/api/manager/policies/**", "/api/promotions/**").hasRole("MANAGER")
-                        .requestMatchers(HttpMethod.PUT, "/api/products/**", "/api/variants/**", "/api/lens_products/**", "/api/lens-products/**", "/api/categories/**", "/api/manager/policies/**", "/api/promotions/**").hasRole("MANAGER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/variants/**", "/api/lens_products/**", "/api/lens-products/**", "/api/categories/**", "/api/promotions/**").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/variants/**", "/api/lens-products/**", "/api/categories", "/api/manager/policies/**", "/api/promotions/**").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**", "/api/variants/**", "/api/lens-products/**", "/api/categories/**", "/api/manager/policies/**", "/api/promotions/**").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/variants/**", "/api/lens-products/**", "/api/categories/**", "/api/promotions/**").hasRole("MANAGER")
                         .requestMatchers("/api/manager/users/**", "/api/manager/revenue/**").hasRole("MANAGER")
 
                         // 5. QUYỀN CỦA ADMIN (QUẢN LÝ USER)

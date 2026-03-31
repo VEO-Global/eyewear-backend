@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping({"/api/lens_products", "/api/lens-products", "/lens-products"})
+@RequestMapping("/api/lens-products")
 @RequiredArgsConstructor
 public class LensProductController {
     private final LensProductService lensProductService;

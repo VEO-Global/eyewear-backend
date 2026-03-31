@@ -138,6 +138,7 @@ public class OrderServiceImpl implements OrderService {
         order.setShippingFee(shippingFee);
         order.setDiscountAmount(BigDecimal.ZERO);
         order.setCreatedAt(LocalDateTime.now());
+        order.setUpdatedAt(order.getCreatedAt());
         order.setItems(orderItems);
 
         orderItems.forEach(item -> item.setOrder(order));
