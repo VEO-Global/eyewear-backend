@@ -870,11 +870,11 @@ SELECT * FROM eyewear_db.system_configs;INSERT INTO eyewear_db.system_configs (c
 ('homepage.featured_products_limit','8','Số sản phẩm nổi bật hiển thị trang chủ');
 -- BUSINESS_POLICIES
 INSERT INTO business_policies (type, title, content, is_active, updated_by) VALUES
-('PURCHASE', 'Purchase Policy', '<p>Customers may purchase products through official VEO channels.</p><p>Orders are confirmed after successful payment or staff verification.</p>', TRUE, 'system'),
-('RETURN', 'Return Policy', '<p>Customers can request returns within the allowed policy window for eligible products.</p><p>Returned items must be unused and include the original accessories.</p>', TRUE, 'system'),
-('WARRANTY', 'Warranty Policy', '<p>Warranty applies to manufacturing defects under the published warranty term.</p><p>Damage caused by misuse or accidental impact is not covered.</p>', TRUE, 'system'),
-('SHIPPING', 'Shipping Policy', '<p>Shipping fees and delivery time depend on destination and selected fulfillment method.</p><p>Free shipping promotions are applied according to active campaigns.</p>', TRUE, 'system'),
-('PRIVACY', 'Privacy Policy', '<p>Customer information is collected only for order fulfillment and service improvement.</p><p>Personal data is protected and not shared outside permitted operational purposes.</p>', TRUE, 'system');
+('PURCHASE', 'Purchase Policy', 'Customers may purchase products through official VEO channels. Orders are confirmed after successful payment or staff verification.', TRUE, 'system'),
+('RETURN', 'Return Policy', 'Customers can request returns within the allowed policy window for eligible products. Returned items must be unused and include the original accessories.', TRUE, 'system'),
+('WARRANTY', 'Warranty Policy', 'Warranty applies to manufacturing defects under the published warranty term. Damage caused by misuse or accidental impact is not covered.', TRUE, 'system'),
+('SHIPPING', 'Shipping Policy', 'Shipping fees and delivery time depend on destination and selected fulfillment method. Free shipping promotions are applied according to active campaigns.', TRUE, 'system'),
+('PRIVACY', 'Privacy Policy', 'Customer information is collected only for order fulfillment and service improvement. Personal data is protected and not shared outside permitted operational purposes.', TRUE, 'system');
 
 --  ORDER 
 INSERT INTO orders
