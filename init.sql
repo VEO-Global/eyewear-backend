@@ -391,26 +391,7 @@ INSERT INTO product_images (product_id, image_url, alt_text, is_thumbnail, is_pr
 (8, 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=1200&q=80', 'Góc chính gọng thanh mảnh 07', TRUE, TRUE, 0),
 (9, 'https://images.unsplash.com/photo-1508296695146-257a814070b4?auto=format&fit=crop&w=1200&q=80', 'Góc chính phong cách đô thị 3', TRUE, TRUE, 0),
 (10, 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=80', 'Góc chính titan airlite siêu nhẹ', TRUE, TRUE, 0);
-(11, 'https://res.cloudinary.com/dw4q0ajrr/image/upload/v1774962394/Gemini_Generated_Image_4g6jjs4g6jjs4g6j_adufk7.png', 'hehe', TRUE, TRUE, 0),
-(12, null, null, TRUE, TRUE, 0),
-(13, null, null, TRUE, TRUE, 0),
-(14, null, null, TRUE, TRUE, 0),
-(15, null, null, TRUE, TRUE, 0),
-(16, null, null, TRUE, TRUE, 0),
-(17, null, null, TRUE, TRUE, 0),
-(18, null, null, TRUE, TRUE, 0),
-(19, null, null, TRUE, TRUE, 0),
-(20, null, null, TRUE, TRUE, 0),
-(21, null, null, TRUE, TRUE, 0),
-(22, null, null, TRUE, TRUE, 0),
-(23, null, null, TRUE, TRUE, 0),
-(24, null, null, TRUE, TRUE, 0),
-(25, null, null, TRUE, TRUE, 0),
-(26, null, null, TRUE, TRUE, 0),
-(27, null, null, TRUE, TRUE, 0),
-(28, null, null, TRUE, TRUE, 0),
-(29, null, null, TRUE, TRUE, 0),
-(30, null, null, TRUE, TRUE, 0);
+
 
 -- 2. PRODUCT_VARIANT
 -- SKU (10 ký tự) = [BR][SZ][CL][PID][RND]
