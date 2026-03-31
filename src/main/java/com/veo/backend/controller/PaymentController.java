@@ -1,9 +1,12 @@
 package com.veo.backend.controller;
 
 import com.veo.backend.dto.request.PaymentConfirmRequest;
+import com.veo.backend.dto.request.PaymentRequest;
 import com.veo.backend.dto.response.PaymentQrResponse;
 import com.veo.backend.dto.response.PaymentSummaryResponse;
 import com.veo.backend.service.PaymentService;
+import io.jsonwebtoken.Jwt;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.web.PageableDefault;
@@ -37,6 +40,17 @@ public class PaymentController {
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<List<PaymentSummaryResponse>> getMyPayments(Authentication authentication) {
         return ResponseEntity.ok(paymentService.getMyPayments(authentication.getName()));
+    }
+
+    @PostMapping("/customer-pay")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<String> payOrder(
+            @RequestBody PaymentRequest request,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+        String message = paymentService.processPayment(request, email);
+        return ResponseEntity.ok(message);
     }
 
     @PostMapping("/order/{orderId}/confirm")

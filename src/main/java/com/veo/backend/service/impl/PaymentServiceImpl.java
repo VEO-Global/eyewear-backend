@@ -1,6 +1,7 @@
 package com.veo.backend.service.impl;
 
 import com.veo.backend.dto.request.PaymentConfirmRequest;
+import com.veo.backend.dto.request.PaymentRequest;
 import com.veo.backend.dto.response.PaymentQrResponse;
 import com.veo.backend.dto.response.PaymentSummaryResponse;
 import com.veo.backend.entity.Order;
@@ -110,6 +111,33 @@ public class PaymentServiceImpl implements PaymentService {
     public List<PaymentSummaryResponse> getAllPayments(Pageable pageable) {
         return paymentRepository.findAll(pageable).stream()
                 .map(this::mapToSummary).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public String processPayment(PaymentRequest request, String userEmail) {
+        Order order = orderRepository.findById(request.getOrderId())
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Order not found"));
+
+        if (order.getUser() == null || !order.getUser().getEmail().equalsIgnoreCase(userEmail)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED, "User cannot do this process");
+        }
+
+        Payment payment = paymentRepository.findByOrderId(order.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND, "Payment information not found"));
+
+        if (payment.getStatus() ==  PaymentStatus.PAID) {
+            return "Payment has been paid";
+        }
+
+        payment.setStatus(PaymentStatus.PAID);
+        payment.setPaidAt(LocalDateTime.now());
+        payment.setMethod(request.getPaymentMethod());
+        paymentRepository.save(payment);
+
+        order.setStatus(OrderStatus.PENDING_VERIFICATION);
+        orderRepository.save(order);
+        return "Payment successfully";
     }
 
     private PaymentSummaryResponse mapToSummary(Payment p) {

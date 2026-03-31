@@ -1,6 +1,7 @@
 package com.veo.backend.service;
 
 import com.veo.backend.dto.request.PaymentConfirmRequest;
+import com.veo.backend.dto.request.PaymentRequest;
 import com.veo.backend.dto.response.PaymentQrResponse;
 import com.veo.backend.dto.response.PaymentSummaryResponse;
 
@@ -19,4 +20,6 @@ public interface PaymentService {
     List<PaymentSummaryResponse> getPaymentsByUserId(Long userId);
 
     List<PaymentSummaryResponse> getAllPayments(Pageable pageable);
+
+    String processPayment(PaymentRequest request, String userEmail);
 }
