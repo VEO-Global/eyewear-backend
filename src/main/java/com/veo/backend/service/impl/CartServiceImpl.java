@@ -99,9 +99,8 @@ public class CartServiceImpl implements CartService {
             cartItem.setLensProduct(lensProduct);
             cartItem.setQuantity(request.getQuantity());
             cartItem = cartItemRepository.save(cartItem);
+            cart.getItems().add(cartItem);
         }
-
-        cart.getItems().add(cartItem);
         cartRepository.save(cart);
 
         return mapToItemResponse(cartItem);

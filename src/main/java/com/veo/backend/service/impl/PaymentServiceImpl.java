@@ -47,15 +47,16 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional
     public PaymentQrResponse getPaymentQr(String email, Long orderId) {
         Order order = resolveOwnedOrder(email, orderId);
+        BigDecimal finalAmount = calculateFinalAmount(order);
 
         String transferContent = "VEO" + order.getId();
 
         String qrUrl = String.format("https://img.vietqr.io/image/MB-123456789-qr_only.png?amount=%s&addInfo=%s",
-                order.getTotalAmount().toBigInteger(), transferContent );
+                finalAmount.toBigInteger(), transferContent );
 
         Payment payment = paymentRepository.findByOrderId(orderId).orElse(new Payment());
         payment.setOrder(order);
-        payment.setAmount(order.getTotalAmount());
+        payment.setAmount(finalAmount);
         payment.setMethod(PaymentMethod.BANK_TRANSFER);
         payment.setStatus(PaymentStatus.PENDING);
         payment.setTransactionCode(order.getOrderCode());
@@ -65,7 +66,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         return PaymentQrResponse.builder()
                 .orderId(order.getId())
-                .orderCode("ORD-" + order.getId())
+                .orderCode(order.getOrderCode())
                 .paymentStatus(PaymentStatus.PENDING)
                 .qrCodeUrl(qrUrl)
                 .qrRawData("00020101021238580010A000000727...")
@@ -73,7 +74,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .bankAccountNumber("0987654321")
                 .bankAccountName("CONG TY VEO EYEWEAR")
                 .transferContent(transferContent)
-                .amountToPay(order.getTotalAmount())
+                .amountToPay(finalAmount)
                 .expiredAt(payment.getExpiredAt())
                 .build();
     }
@@ -95,6 +96,7 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setStatus(PaymentStatus.PAID);
         payment.setTransactionCode(request.getTransactionCode());
         payment.setPaymentProofImg(request.getPaymentProofImg());
+        payment.setAmount(calculateFinalAmount(payment.getOrder()));
         payment.setPaidAt(LocalDateTime.now());
 
         if (payment.getOrder() != null && payment.getOrder().getStatus() == OrderStatus.PENDING_PAYMENT) {
@@ -261,7 +263,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         // Đánh dấu thanh toán thành công (FAKE - không verify thật)
         payment.setOrder(order);
-        payment.setAmount(order.getTotalAmount());
+        payment.setAmount(calculateFinalAmount(order));
         payment.setMethod(PaymentMethod.PAYOS);
         payment.setStatus(PaymentStatus.PAID);
         payment.setTransactionCode(String.valueOf(orderCode));
@@ -313,6 +315,16 @@ public class PaymentServiceImpl implements PaymentService {
         return payments.stream()
                 .map(Payment::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal calculateFinalAmount(Order order) {
+        if (order == null) {
+            return BigDecimal.ZERO;
+        }
+
+        return (order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO)
+                .add(order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO)
+                .subtract(order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO);
     }
 
     private LocalDateTime atStartOfDayOrMin(LocalDate date) {

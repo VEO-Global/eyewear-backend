@@ -353,7 +353,8 @@ public class StaffOrderServiceImpl implements StaffOrderService {
             case PENDING_VERIFICATION -> isReadyToDeliver(order, prescription)
                     ? StaffOrderPhase.READY_TO_DELIVER
                     : StaffOrderPhase.PENDING_CONFIRMATION;
-            case MANUFACTURING -> StaffOrderPhase.PROCESSING;
+            case MANUFACTURING, PACKING -> StaffOrderPhase.PROCESSING;
+            case READY_TO_SHIP -> StaffOrderPhase.READY_TO_DELIVER;
             case SHIPPING -> StaffOrderPhase.SHIPPING;
             case COMPLETED -> StaffOrderPhase.COMPLETED;
             case CANCELLED -> StaffOrderPhase.CANCELED;
@@ -383,12 +384,28 @@ public class StaffOrderServiceImpl implements StaffOrderService {
                 yield OrderStatus.PENDING_VERIFICATION;
             }
             case PROCESSING -> OrderStatus.MANUFACTURING;
-            case READY_TO_DELIVER -> OrderStatus.WAITING_FOR_STOCK;
+            case READY_TO_DELIVER -> resolveReadyToDeliverStatus(order, prescription);
             case SHIPPING -> OrderStatus.SHIPPING;
             case COMPLETED -> OrderStatus.COMPLETED;
             case CANCELED -> OrderStatus.CANCELLED;
             case RETURN_REFUND -> throw new AppException(ErrorCode.VALIDATION_ERROR, "Return/refund flow is not implemented for staff orders");
         };
+    }
+
+    private OrderStatus resolveReadyToDeliverStatus(Order order, Prescription prescription) {
+        if (order == null) {
+            return OrderStatus.PENDING_VERIFICATION;
+        }
+
+        if (order.getOrderType() == OrderType.PRE_ORDER) {
+            return OrderStatus.WAITING_FOR_STOCK;
+        }
+
+        if (requiresPrescription(order, prescription)) {
+            return OrderStatus.MANUFACTURING;
+        }
+
+        return OrderStatus.PACKING;
     }
 
     private void validateTransition(OrderStatus currentStatus, OrderStatus targetStatus) {
@@ -424,9 +441,25 @@ public class StaffOrderServiceImpl implements StaffOrderService {
             throw new AppException(ErrorCode.VALIDATION_ERROR, "Only newly confirmed orders can be handed off to operations");
         }
 
-        if (targetStatus == OrderStatus.SHIPPING
+        if (targetStatus == OrderStatus.PACKING
+                && currentStatus != OrderStatus.PENDING_VERIFICATION
                 && currentStatus != OrderStatus.WAITING_FOR_STOCK
-                && currentStatus != OrderStatus.MANUFACTURING) {
+                && currentStatus != OrderStatus.MANUFACTURING
+                && currentStatus != OrderStatus.PACKING) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "Order must be confirmed before packing");
+        }
+
+        if (targetStatus == OrderStatus.READY_TO_SHIP
+                && currentStatus != OrderStatus.PACKING
+                && currentStatus != OrderStatus.MANUFACTURING
+                && currentStatus != OrderStatus.READY_TO_SHIP) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "Order must be processed before it can be marked ready to ship");
+        }
+
+        if (targetStatus == OrderStatus.SHIPPING
+                && currentStatus != OrderStatus.PACKING
+                && currentStatus != OrderStatus.READY_TO_SHIP
+                && currentStatus != OrderStatus.SHIPPING) {
             throw new AppException(ErrorCode.VALIDATION_ERROR, "Order must be in processing before shipping");
         }
 

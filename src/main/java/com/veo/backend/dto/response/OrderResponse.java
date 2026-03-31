@@ -2,6 +2,7 @@ package com.veo.backend.dto.response;
 
 import com.veo.backend.enums.OrderStatus;
 import com.veo.backend.enums.OrderType;
+import com.veo.backend.enums.PaymentMethod;
 import com.veo.backend.enums.PaymentStatus;
 import com.veo.backend.enums.PrescriptionOption;
 import com.veo.backend.enums.PrescriptionReviewStatus;
@@ -9,6 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -17,6 +19,7 @@ import java.util.List;
 public class OrderResponse {
     private Long orderId;
     private String orderCode;
+    private PaymentMethod paymentMethod;
     private String customerEmail;
     private OrderStatus status;
     private OrderStatus orderStatus;
@@ -41,7 +44,9 @@ public class OrderResponse {
     private String note;
     private String cancelReason;
     private String logisticsProvider;
+    private String shippingMethod;
     private String trackingNumber;
+    private LocalDate estimatedDeliveryDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private PaymentSummaryResponse payment;

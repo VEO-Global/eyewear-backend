@@ -1,6 +1,7 @@
 package com.veo.backend.dto.response;
 
 import com.veo.backend.enums.OrderStatus;
+import com.veo.backend.enums.PaymentMethod;
 import com.veo.backend.enums.PaymentStatus;
 import com.veo.backend.enums.PrescriptionOption;
 import com.veo.backend.enums.PrescriptionReviewStatus;
@@ -16,6 +17,7 @@ import java.util.List;
 public class OrderCreateResponse {
     private Long orderId;
     private String orderCode;
+    private PaymentMethod paymentMethod;
     private BigDecimal totalAmount;
     private BigDecimal shippingFee;
     private BigDecimal discountAmount;

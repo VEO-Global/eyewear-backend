@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,6 +66,14 @@ public class Order {
 
     @Column(columnDefinition = "TEXT")
     private String cancelReason;
+
+    private String logisticsProvider;
+
+    private String shippingMethod;
+
+    private String trackingNumber;
+
+    private LocalDate estimatedDeliveryDate;
 
     private LocalDateTime createdAt;
 

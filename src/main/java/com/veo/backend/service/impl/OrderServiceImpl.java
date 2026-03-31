@@ -8,6 +8,7 @@ import com.veo.backend.dto.response.OrderCreateResponse;
 import com.veo.backend.dto.response.OrderItemResponse;
 import com.veo.backend.dto.response.OrderResponse;
 import com.veo.backend.dto.response.PagedResponse;
+import com.veo.backend.dto.response.PaymentSummaryResponse;
 import com.veo.backend.dto.response.PrescriptionResponse;
 import com.veo.backend.dto.response.PriceSummaryResponse;
 import com.veo.backend.entity.*;
@@ -43,6 +44,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
+    private final CartRepository cartRepository;
+    private final CartItemRepository cartItemRepository;
+    private final PaymentRepository paymentRepository;
     private final ProductVariantRepository variantRepository;
     private final LensProductRepository lensProductRepository;
     private final UserRepository userRepository;
@@ -56,6 +60,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderCreateResponse createOrder(String email, OrderCreateRequest request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND, "User not found"));
+        PaymentMethod paymentMethod = request.getPaymentMethod() != null ? request.getPaymentMethod() : PaymentMethod.COD;
 
         PrescriptionOption prescriptionOption = request.getPrescriptionOption();
 
@@ -97,6 +102,7 @@ public class OrderServiceImpl implements OrderService {
 
             OrderItem orderItem = new OrderItem();
             orderItem.setProductVariant(variant);
+            orderItem.setLensProduct(selectedLens);
             orderItem.setQuantity(quantity);
             orderItem.setPrice(itemTotal);
             orderItems.add(orderItem);
@@ -145,6 +151,8 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.save(order);
         order.setOrderCode("ORD-" + order.getId());
         orderRepository.save(order);
+        Payment payment = initializeOrderPayment(order, paymentMethod);
+        syncCartAfterCheckout(user, request.getItems());
         saveOrUpdateDefaultUserAddress(user, builtAddress, request);
 
         Prescription savedPrescription = null;
@@ -171,19 +179,21 @@ public class OrderServiceImpl implements OrderService {
 
         // --- PayOS: tạo link thanh toán nếu chọn PAYOS ---
         String checkoutUrl = null;
-        if (PaymentMethod.PAYOS == request.getPaymentMethod()) {
+        if (PaymentMethod.PAYOS == paymentMethod) {
             checkoutUrl = paymentService.createPayosPaymentLink(order.getId());
+            payment = paymentRepository.findFirstByOrderIdOrderByIdDesc(order.getId()).orElse(payment);
         }
 
         return OrderCreateResponse.builder()
                 .orderId(order.getId())
-                .totalAmount(subtotalAmount)
                 .orderCode(order.getOrderCode())
+                .paymentMethod(payment != null ? payment.getMethod() : paymentMethod)
+                .totalAmount(subtotalAmount)
                 .shippingFee(shippingFee)
                 .discountAmount(defaultAmount(order.getDiscountAmount()))
                 .finalAmount(finalAmount)
                 .orderStatus(order.getStatus())
-                .paymentStatus(PaymentStatus.UNPAID)
+                .paymentStatus(payment != null ? payment.getStatus() : PaymentStatus.UNPAID)
                 .prescriptionOption(prescriptionOption)
                 .prescriptionReviewStatus(savedPrescription != null ? savedPrescription.getReviewStatus() : null)
                 .items(mapOrderItems(order.getItems()))
@@ -337,8 +347,103 @@ public class OrderServiceImpl implements OrderService {
         return value == null ? fallback : value;
     }
 
+    private Payment initializeOrderPayment(Order order, PaymentMethod paymentMethod) {
+        if (order == null || order.getId() == null) {
+            return null;
+        }
+
+        Payment payment = paymentRepository.findFirstByOrderIdOrderByIdDesc(order.getId()).orElseGet(Payment::new);
+        payment.setOrder(order);
+        payment.setMethod(paymentMethod);
+        payment.setAmount(calculateFinalAmount(order));
+        payment.setStatus(resolveInitialPaymentStatus(paymentMethod));
+        payment.setTransactionCode(order.getOrderCode());
+
+        if (payment.getStatus() != PaymentStatus.PAID) {
+            payment.setPaidAt(null);
+        }
+
+        if (paymentMethod == PaymentMethod.BANK_TRANSFER || paymentMethod == PaymentMethod.PAYOS) {
+            payment.setExpiredAt(LocalDateTime.now().plusHours(24));
+        } else {
+            payment.setExpiredAt(null);
+        }
+
+        return paymentRepository.save(payment);
+    }
+
+    private PaymentStatus resolveInitialPaymentStatus(PaymentMethod paymentMethod) {
+        return switch (paymentMethod) {
+            case PAYOS, BANK_TRANSFER, MOMO, VNPAY -> PaymentStatus.PENDING;
+            case COD -> PaymentStatus.UNPAID;
+        };
+    }
+
+    private BigDecimal calculateFinalAmount(Order order) {
+        if (order == null) {
+            return BigDecimal.ZERO;
+        }
+
+        return defaultAmount(order.getTotalAmount())
+                .add(defaultAmount(order.getShippingFee()))
+                .subtract(defaultAmount(order.getDiscountAmount()));
+    }
+
+    private void syncCartAfterCheckout(User user, List<OrderItemRequest> items) {
+        if (user == null || user.getId() == null || items == null || items.isEmpty()) {
+            return;
+        }
+
+        Cart cart = cartRepository.findByUserId(user.getId()).orElse(null);
+        if (cart == null || cart.getItems() == null || cart.getItems().isEmpty()) {
+            return;
+        }
+
+        for (OrderItemRequest requestItem : items) {
+            Long variantId = requestItem.resolveVariantId();
+            Long lensProductId = requestItem.getLensProductId();
+            Integer orderedQuantity = requestItem.getQuantity();
+
+            if (variantId == null || orderedQuantity == null || orderedQuantity <= 0) {
+                continue;
+            }
+
+            CartItem matchedItem = cart.getItems().stream()
+                    .filter(cartItem -> cartItem.getProductVariant() != null
+                            && variantId.equals(cartItem.getProductVariant().getId())
+                            && sameLens(cartItem, lensProductId))
+                    .findFirst()
+                    .orElse(null);
+
+            if (matchedItem == null) {
+                continue;
+            }
+
+            int remainingQuantity = (matchedItem.getQuantity() == null ? 0 : matchedItem.getQuantity()) - orderedQuantity;
+            if (remainingQuantity > 0) {
+                matchedItem.setQuantity(remainingQuantity);
+                cartItemRepository.save(matchedItem);
+            } else {
+                cart.getItems().removeIf(cartItem -> cartItem.getId() != null && cartItem.getId().equals(matchedItem.getId()));
+                matchedItem.setCart(null);
+                cartItemRepository.delete(matchedItem);
+            }
+        }
+
+        cartRepository.save(cart);
+    }
+
+    private boolean sameLens(CartItem cartItem, Long lensProductId) {
+        if (lensProductId == null) {
+            return cartItem.getLensProduct() == null || cartItem.getLensProduct().getId() == null;
+        }
+
+        return cartItem.getLensProduct() != null && lensProductId.equals(cartItem.getLensProduct().getId());
+    }
+
     private OrderResponse mapOrderResponse(Order order) {
         Prescription prescription = prescriptionRepository.findByOrderId(order.getId()).orElse(null);
+        Payment payment = paymentRepository.findFirstByOrderIdOrderByIdDesc(order.getId()).orElse(null);
         BigDecimal subtotal = defaultAmount(order.getTotalAmount()).subtract(defaultAmount(order.getShippingFee())).add(defaultAmount(order.getDiscountAmount()));
         BigDecimal lensPrice = prescription != null ? defaultAmount(prescription.getLensPriceSnapshot()) : BigDecimal.ZERO;
         BigDecimal itemSubtotal = subtotal.subtract(lensPrice).max(BigDecimal.ZERO);
@@ -346,6 +451,7 @@ public class OrderServiceImpl implements OrderService {
         return OrderResponse.builder()
                 .orderId(order.getId())
                 .orderCode(order.getOrderCode())
+                .paymentMethod(payment != null ? payment.getMethod() : null)
                 .customerEmail(order.getUser().getEmail())
                 .status(order.getStatus())
                 .orderStatus(order.getStatus())
@@ -361,6 +467,11 @@ public class OrderServiceImpl implements OrderService {
                 .shippingFee(defaultAmount(order.getShippingFee()))
                 .discountAmount(defaultAmount(order.getDiscountAmount()))
                 .shippingAddress(order.getShippingAddress())
+                .paymentStatus(payment != null ? payment.getStatus() : PaymentStatus.UNPAID)
+                .logisticsProvider(order.getLogisticsProvider())
+                .shippingMethod(order.getShippingMethod())
+                .trackingNumber(order.getTrackingNumber())
+                .estimatedDeliveryDate(order.getEstimatedDeliveryDate())
                 .city(order.getCity())
                 .district(order.getDistrict())
                 .ward(order.getWard())
@@ -370,6 +481,7 @@ public class OrderServiceImpl implements OrderService {
                 .note(order.getNote())
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt())
+                .payment(payment != null ? mapPaymentSummary(payment) : null)
                 .lens(mapLensSummaryResponse(prescription))
                 .prescription(mapPrescriptionResponse(prescription))
                 .priceSummary(PriceSummaryResponse.builder()
@@ -379,6 +491,29 @@ public class OrderServiceImpl implements OrderService {
                         .total(defaultAmount(order.getTotalAmount()).add(defaultAmount(order.getShippingFee())).subtract(defaultAmount(order.getDiscountAmount())))
                         .build())
                 .items(mapOrderItems(order.getItems()))
+                .build();
+    }
+
+    private PaymentSummaryResponse mapPaymentSummary(Payment payment) {
+        if (payment == null) {
+            return null;
+        }
+
+        return PaymentSummaryResponse.builder()
+                .paymentId(payment.getId())
+                .orderId(payment.getOrder() != null ? payment.getOrder().getId() : null)
+                .orderCode(payment.getOrder() != null ? payment.getOrder().getOrderCode() : null)
+                .customerId(payment.getOrder() != null && payment.getOrder().getUser() != null ? payment.getOrder().getUser().getId() : null)
+                .customerName(payment.getOrder() != null && payment.getOrder().getUser() != null ? payment.getOrder().getUser().getFullName() : null)
+                .customerEmail(payment.getOrder() != null && payment.getOrder().getUser() != null ? payment.getOrder().getUser().getEmail() : null)
+                .method(payment.getMethod())
+                .status(payment.getStatus())
+                .amount(payment.getAmount())
+                .transactionCode(payment.getTransactionCode())
+                .paymentProofImg(payment.getPaymentProofImg())
+                .createdAt(payment.getCreatedAt())
+                .expiredAt(payment.getExpiredAt())
+                .paidAt(payment.getPaidAt())
                 .build();
     }
 
@@ -629,7 +764,9 @@ public class OrderServiceImpl implements OrderService {
         return switch (tab.trim().toLowerCase(Locale.ROOT)) {
             case "cho-gia-cong" -> Arrays.asList(
                     OrderStatus.PENDING_VERIFICATION,
-                    OrderStatus.MANUFACTURING
+                    OrderStatus.MANUFACTURING,
+                    OrderStatus.PACKING,
+                    OrderStatus.READY_TO_SHIP
             );
             case "van-chuyen" -> List.of(OrderStatus.SHIPPING);
             case "cho-giao-hang" -> Arrays.asList(
@@ -653,6 +790,8 @@ public class OrderServiceImpl implements OrderService {
             case PENDING_VERIFICATION -> "Chờ xác nhận toa";
             case WAITING_FOR_STOCK -> "Chờ có hàng";
             case MANUFACTURING -> "Chờ gia công";
+            case PACKING -> "Packing";
+            case READY_TO_SHIP -> "Ready to ship";
             case SHIPPING -> "Vận chuyển";
             case COMPLETED -> "Hoàn thành";
             case CANCELLED -> "Đã hủy";
@@ -665,7 +804,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         return switch (status) {
-            case PENDING_VERIFICATION, MANUFACTURING -> "cho-gia-cong";
+            case PENDING_VERIFICATION, MANUFACTURING, PACKING, READY_TO_SHIP -> "cho-gia-cong";
             case SHIPPING -> "van-chuyen";
             case PENDING_PAYMENT, WAITING_FOR_STOCK -> "cho-giao-hang";
             case COMPLETED -> "hoan-thanh";
@@ -673,3 +812,5 @@ public class OrderServiceImpl implements OrderService {
         };
     }
 }
+
+

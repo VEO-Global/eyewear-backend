@@ -1,17 +1,26 @@
 package com.veo.backend.service;
 
+import com.veo.backend.dto.request.AssignLogisticsRequest;
+import com.veo.backend.dto.request.OperationReceiveStockRequest;
+import com.veo.backend.dto.request.OperationStatusUpdateRequest;
+import com.veo.backend.dto.request.OrderTrackingRequest;
+import com.veo.backend.dto.response.OperationOrderSummaryResponse;
 import com.veo.backend.dto.response.OrderResponse;
 
 import java.util.List;
 
 public interface OperationOrderService {
-    List<OrderResponse> getManufacturingOrders();
+    List<OrderResponse> getOrders(String orderType, String status, String keyword);
 
-    OrderResponse getManufacturingOrderDetail(Long id);
+    OperationOrderSummaryResponse getOrderSummary();
 
-    OrderResponse updateToManufacturing(Long id);
+    OrderResponse getOrderDetail(Long id);
 
-    OrderResponse updateToShipping(Long id);
+    OrderResponse updateOrderStatus(Long id, String actorEmail, OperationStatusUpdateRequest request);
 
-    OrderResponse updateToCompleted(Long id);
+    OrderResponse assignLogistics(Long id, String actorEmail, AssignLogisticsRequest request);
+
+    OrderResponse updateTracking(Long id, String actorEmail, OrderTrackingRequest request);
+
+    OrderResponse receivePreOrderStock(Long id, String actorEmail, OperationReceiveStockRequest request);
 }
