@@ -16,4 +16,6 @@ public class ProductBundleResponse {
     private Boolean isActive;
     private List<Long> productVariantIds;
     private List<Long> lensProductIds;
+    private List<ProductVariantResponse> productVariants;
+    private List<LensProductResponse> lensProducts;
 }

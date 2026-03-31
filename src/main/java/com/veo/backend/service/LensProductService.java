@@ -1,11 +1,14 @@
 package com.veo.backend.service;
 
+import com.veo.backend.dto.request.LensProductCreateRequest;
 import com.veo.backend.dto.request.LensProductUpdateRequest;
 import com.veo.backend.dto.response.LensProductResponse;
 
 import java.util.List;
 
 public interface LensProductService {
+    LensProductResponse createLensProduct(LensProductCreateRequest request);
+
     LensProductResponse updateLensProduct(Long id, LensProductUpdateRequest request);
 
     void deleteLensProduct(Long id);

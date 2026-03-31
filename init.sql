@@ -99,13 +99,14 @@ CREATE TABLE product_images (
 CREATE TABLE product_variants (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     product_id BIGINT NOT NULL,
-    sku VARCHAR(50) UNIQUE, -- Stock keeping unit
-    color VARCHAR(50),
-    size VARCHAR(20),
-    price DECIMAL(15, 2),   -- Variant-specific price
-    stock_quantity INT DEFAULT 0,
+    sku VARCHAR(50) NOT NULL UNIQUE, -- Stock keeping unit
+    color VARCHAR(50) NOT NULL,
+    size VARCHAR(20) NOT NULL,
+    price DECIMAL(15, 2) NOT NULL,   -- Variant-specific price
+    stock_quantity INT NOT NULL DEFAULT 0,
     expected_restock_date DATETIME, -- Used for pre-order items
     is_active BOOLEAN DEFAULT TRUE,
+    CONSTRAINT uk_product_variants_product_color_size UNIQUE (product_id, color, size),
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
@@ -247,6 +248,19 @@ CREATE TABLE system_configs (
     config_key VARCHAR(100) UNIQUE NOT NULL,
     config_value VARCHAR(255) NOT NULL,
     description TEXT
+);
+
+CREATE TABLE business_policies (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    type VARCHAR(50) NOT NULL UNIQUE,
+    title VARCHAR(255) NOT NULL,
+    content LONGTEXT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by VARCHAR(100),
+    CONSTRAINT chk_business_policy_type
+        CHECK (type IN ('PURCHASE', 'RETURN', 'WARRANTY', 'SHIPPING', 'PRIVACY'))
 );
 
 -- =============================================
@@ -854,6 +868,14 @@ SELECT * FROM eyewear_db.system_configs;INSERT INTO eyewear_db.system_configs (c
 ('system.maintenance_mode','false','Bật/tắt chế độ bảo trì hệ thống'),
 -- Homepage
 ('homepage.featured_products_limit','8','Số sản phẩm nổi bật hiển thị trang chủ');
+-- BUSINESS_POLICIES
+INSERT INTO business_policies (type, title, content, is_active, updated_by) VALUES
+('PURCHASE', 'Purchase Policy', '<p>Customers may purchase products through official VEO channels.</p><p>Orders are confirmed after successful payment or staff verification.</p>', TRUE, 'system'),
+('RETURN', 'Return Policy', '<p>Customers can request returns within the allowed policy window for eligible products.</p><p>Returned items must be unused and include the original accessories.</p>', TRUE, 'system'),
+('WARRANTY', 'Warranty Policy', '<p>Warranty applies to manufacturing defects under the published warranty term.</p><p>Damage caused by misuse or accidental impact is not covered.</p>', TRUE, 'system'),
+('SHIPPING', 'Shipping Policy', '<p>Shipping fees and delivery time depend on destination and selected fulfillment method.</p><p>Free shipping promotions are applied according to active campaigns.</p>', TRUE, 'system'),
+('PRIVACY', 'Privacy Policy', '<p>Customer information is collected only for order fulfillment and service improvement.</p><p>Personal data is protected and not shared outside permitted operational purposes.</p>', TRUE, 'system');
+
 --  ORDER 
 INSERT INTO orders
 (user_id,status,order_type,total_amount,shipping_fee,discount_amount,

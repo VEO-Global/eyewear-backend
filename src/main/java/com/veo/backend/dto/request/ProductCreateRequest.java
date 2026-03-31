@@ -3,7 +3,6 @@ package com.veo.backend.dto.request;
 import com.veo.backend.enums.ProductCatalogType;
 import com.veo.backend.enums.ProductStatus;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -36,8 +35,6 @@ public class ProductCreateRequest {
 
     private String model3dUrl;
 
-    @NotNull
-    @Min(0)
     private Integer quantity;
 
     private Boolean isActive;

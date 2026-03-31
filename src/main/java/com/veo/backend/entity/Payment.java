@@ -4,6 +4,7 @@ import com.veo.backend.enums.PaymentMethod;
 import com.veo.backend.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -35,6 +36,10 @@ public class Payment {
     private String transactionCode;
 
     private String paymentProofImg;
+
+    @Column(name = "created_at", updatable = false)
+    @CreationTimestamp
+    private LocalDateTime createdAt;
 
     private LocalDateTime expiredAt;
 

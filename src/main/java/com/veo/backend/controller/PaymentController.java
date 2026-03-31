@@ -1,6 +1,7 @@
 package com.veo.backend.controller;
 
 import com.veo.backend.dto.request.PaymentConfirmRequest;
+import com.veo.backend.dto.response.PagedResponse;
 import com.veo.backend.dto.response.PaymentQrResponse;
 import com.veo.backend.dto.response.PaymentSummaryResponse;
 import com.veo.backend.service.PaymentService;
@@ -41,7 +42,7 @@ public class PaymentController {
     }
 
     @PostMapping("/order/{orderId}/confirm")
-    @PreAuthorize("hasRole('SALE')")
+    @PreAuthorize("hasAnyRole('SALES','MANAGER','ADMIN')")
     public ResponseEntity<PaymentSummaryResponse> confirmPayment(
             Authentication auth,
             @PathVariable Long orderId,
@@ -50,14 +51,14 @@ public class PaymentController {
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasRole('SALE')")
+    @PreAuthorize("hasAnyRole('SALES','MANAGER','ADMIN')")
     public ResponseEntity<List<PaymentSummaryResponse>> getPaymentsByUserId(@PathVariable Long userId) {
         return ResponseEntity.ok(paymentService.getPaymentsByUserId(userId));
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasRole('SALE')")
-    public ResponseEntity<List<PaymentSummaryResponse>> getAllPayments(
+    @PreAuthorize("hasAnyRole('SALES','MANAGER','ADMIN')")
+    public ResponseEntity<PagedResponse<PaymentSummaryResponse>> getAllPayments(
             @PageableDefault(size = 10, sort = "createdAt") Pageable pageable) {
         return ResponseEntity.ok(paymentService.getAllPayments(pageable));
     }

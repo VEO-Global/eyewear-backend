@@ -1,8 +1,11 @@
 package com.veo.backend.service.impl;
 
 import com.veo.backend.dto.request.PaymentConfirmRequest;
+import com.veo.backend.dto.response.PagedResponse;
 import com.veo.backend.dto.response.PaymentQrResponse;
 import com.veo.backend.dto.response.PaymentSummaryResponse;
+import com.veo.backend.dto.response.RevenuePointResponse;
+import com.veo.backend.dto.response.RevenueSummaryResponse;
 import com.veo.backend.entity.Order;
 import com.veo.backend.entity.Payment;
 import com.veo.backend.entity.User;
@@ -24,7 +27,10 @@ import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 
 import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -40,8 +46,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public PaymentQrResponse getPaymentQr(String email, Long orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Order not found"));
+        Order order = resolveOwnedOrder(email, orderId);
 
         String transferContent = "VEO" + order.getId();
 
@@ -55,7 +60,7 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setStatus(PaymentStatus.PENDING);
         payment.setTransactionCode(order.getOrderCode());
         payment.setExpiredAt(LocalDateTime.now().plusHours(24));
-        payment.setPaidAt(LocalDateTime.now());
+        payment.setPaidAt(null);
         paymentRepository.save(payment);
 
         return PaymentQrResponse.builder()
@@ -75,6 +80,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public PaymentSummaryResponse getPaymentStatus(String email, Long orderId) {
+        resolveOwnedOrder(email, orderId);
         Payment payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(()  -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Order not found"));
         return mapToSummary(payment);
@@ -91,7 +97,10 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setPaymentProofImg(request.getPaymentProofImg());
         payment.setPaidAt(LocalDateTime.now());
 
-        payment.getOrder().setStatus(OrderStatus.PENDING_PAYMENT);
+        if (payment.getOrder() != null && payment.getOrder().getStatus() == OrderStatus.PENDING_PAYMENT) {
+            payment.getOrder().setStatus(OrderStatus.PENDING_VERIFICATION);
+            payment.getOrder().setUpdatedAt(LocalDateTime.now());
+        }
 
         return mapToSummary(paymentRepository.save(payment));
     }
@@ -113,9 +122,79 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public List<PaymentSummaryResponse> getAllPayments(Pageable pageable) {
-        return paymentRepository.findAll(pageable).stream()
-                .map(this::mapToSummary).collect(Collectors.toList());
+    public PagedResponse<PaymentSummaryResponse> getAllPayments(Pageable pageable) {
+        var page = paymentRepository.findAll(pageable);
+        return PagedResponse.<PaymentSummaryResponse>builder()
+                .content(page.getContent().stream().map(this::mapToSummary).toList())
+                .page(page.getNumber())
+                .size(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .last(page.isLast())
+                .build();
+    }
+
+    @Override
+    public RevenueSummaryResponse getRevenueSummary(LocalDate from, LocalDate to) {
+        LocalDateTime start = atStartOfDayOrMin(from);
+        LocalDateTime end = atEndOfDayOrNow(to);
+
+        List<Payment> payments = paymentRepository.findByStatus(PaymentStatus.PAID).stream()
+                .filter(payment -> payment.getPaidAt() != null)
+                .filter(payment -> !payment.getPaidAt().isBefore(start) && !payment.getPaidAt().isAfter(end))
+                .toList();
+
+        BigDecimal totalRevenue = sumAmounts(payments);
+        BigDecimal averageOrderValue = payments.isEmpty()
+                ? BigDecimal.ZERO
+                : totalRevenue.divide(BigDecimal.valueOf(payments.size()), 2, RoundingMode.HALF_UP);
+
+        return RevenueSummaryResponse.builder()
+                .fromDate(start.toLocalDate().toString())
+                .toDate(end.toLocalDate().toString())
+                .totalPaidOrders(payments.size())
+                .totalRevenue(totalRevenue)
+                .averageOrderValue(averageOrderValue)
+                .build();
+    }
+
+    @Override
+    public List<RevenuePointResponse> getRevenueDaily(int year, int month) {
+        YearMonth yearMonth = YearMonth.of(year, month);
+        List<Payment> paidPayments = paymentRepository.findByStatus(PaymentStatus.PAID);
+
+        return yearMonth.atDay(1).datesUntil(yearMonth.plusMonths(1).atDay(1))
+                .map(date -> {
+                    List<Payment> payments = paidPayments.stream()
+                            .filter(payment -> payment.getPaidAt() != null)
+                            .filter(payment -> payment.getPaidAt().toLocalDate().equals(date))
+                            .toList();
+                    return RevenuePointResponse.builder()
+                            .label(date.toString())
+                            .totalOrders(payments.size())
+                            .totalRevenue(sumAmounts(payments))
+                            .build();
+                })
+                .toList();
+    }
+
+    @Override
+    public List<RevenuePointResponse> getRevenueMonthly(int year) {
+        List<Payment> paidPayments = paymentRepository.findByStatus(PaymentStatus.PAID);
+
+        return java.util.stream.IntStream.rangeClosed(1, 12)
+                .mapToObj(month -> {
+                    List<Payment> payments = paidPayments.stream()
+                            .filter(payment -> payment.getPaidAt() != null)
+                            .filter(payment -> payment.getPaidAt().getYear() == year && payment.getPaidAt().getMonthValue() == month)
+                            .toList();
+                    return RevenuePointResponse.builder()
+                            .label(String.format("%04d-%02d", year, month))
+                            .totalOrders(payments.size())
+                            .totalRevenue(sumAmounts(payments))
+                            .build();
+                })
+                .toList();
     }
 
     @Override
@@ -200,13 +279,48 @@ public class PaymentServiceImpl implements PaymentService {
     private PaymentSummaryResponse mapToSummary(Payment p) {
         return PaymentSummaryResponse.builder()
                 .paymentId(p.getId())
+                .orderId(p.getOrder() != null ? p.getOrder().getId() : null)
+                .orderCode(p.getOrder() != null ? p.getOrder().getOrderCode() : null)
+                .customerId(p.getOrder() != null && p.getOrder().getUser() != null ? p.getOrder().getUser().getId() : null)
+                .customerName(p.getOrder() != null && p.getOrder().getUser() != null ? p.getOrder().getUser().getFullName() : null)
+                .customerEmail(p.getOrder() != null && p.getOrder().getUser() != null ? p.getOrder().getUser().getEmail() : null)
                 .method(p.getMethod())
                 .status(p.getStatus())
                 .amount(p.getAmount())
                 .transactionCode(p.getTransactionCode())
                 .paymentProofImg(p.getPaymentProofImg())
+                .createdAt(p.getCreatedAt())
                 .expiredAt(p.getExpiredAt())
                 .paidAt(p.getPaidAt())
                 .build();
+    }
+
+    private Order resolveOwnedOrder(String email, Long orderId) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found"));
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Order not found"));
+
+        if (order.getUser() == null || !user.getId().equals(order.getUser().getId())) {
+            throw new AppException(ErrorCode.FORBIDDEN, "You do not have permission to access this payment");
+        }
+
+        return order;
+    }
+
+    private BigDecimal sumAmounts(List<Payment> payments) {
+        return payments.stream()
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private LocalDateTime atStartOfDayOrMin(LocalDate date) {
+        return (date == null ? LocalDate.now().minusDays(29) : date).atStartOfDay();
+    }
+
+    private LocalDateTime atEndOfDayOrNow(LocalDate date) {
+        LocalDate localDate = date == null ? LocalDate.now() : date;
+        return localDate.atTime(23, 59, 59);
     }
 }

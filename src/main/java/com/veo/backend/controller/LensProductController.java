@@ -1,8 +1,10 @@
 package com.veo.backend.controller;
 
+import com.veo.backend.dto.request.LensProductCreateRequest;
 import com.veo.backend.dto.request.LensProductUpdateRequest;
 import com.veo.backend.dto.response.LensProductResponse;
 import com.veo.backend.service.LensProductService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +20,12 @@ public class LensProductController {
     @GetMapping
     public List<LensProductResponse> getAllLensProducts() {
         return lensProductService.getAllLensProducts();
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('MANAGER')")
+    public LensProductResponse createLensProduct(@Valid @RequestBody LensProductCreateRequest request) {
+        return lensProductService.createLensProduct(request);
     }
 
     @GetMapping("/{id}")

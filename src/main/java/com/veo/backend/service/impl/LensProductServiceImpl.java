@@ -1,5 +1,6 @@
 package com.veo.backend.service.impl;
 
+import com.veo.backend.dto.request.LensProductCreateRequest;
 import com.veo.backend.dto.request.LensProductUpdateRequest;
 import com.veo.backend.dto.response.LensProductResponse;
 import com.veo.backend.entity.LensProduct;
@@ -16,6 +17,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LensProductServiceImpl implements LensProductService {
     private final LensProductRepository lensProductRepository;
+
+    @Override
+    public LensProductResponse createLensProduct(LensProductCreateRequest request) {
+        LensProduct lensProduct = new LensProduct();
+        lensProduct.setName(request.getName().trim());
+        lensProduct.setType(request.getType().trim());
+        lensProduct.setRefractionIndex(request.getRefractionIndex());
+        lensProduct.setDescription(request.getDescription());
+        lensProduct.setPrice(request.getPrice());
+        lensProduct.setIsActive(request.getIsActive() != null ? request.getIsActive() : true);
+        return mapToResponse(lensProductRepository.save(lensProduct));
+    }
 
     @Override
     public LensProductResponse updateLensProduct(Long id, LensProductUpdateRequest request) {

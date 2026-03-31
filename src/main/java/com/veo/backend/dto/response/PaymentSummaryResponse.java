@@ -12,11 +12,17 @@ import java.time.LocalDateTime;
 @Builder
 public class PaymentSummaryResponse {
     private Long paymentId;
+    private Long orderId;
+    private String orderCode;
+    private Long customerId;
+    private String customerName;
+    private String customerEmail;
     private PaymentMethod method;
     private PaymentStatus status;
     private BigDecimal amount;
     private String transactionCode;
     private String paymentProofImg;
+    private LocalDateTime createdAt;
     private LocalDateTime expiredAt;
     private LocalDateTime paidAt;
 }

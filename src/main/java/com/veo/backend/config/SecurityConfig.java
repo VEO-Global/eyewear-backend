@@ -44,6 +44,7 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout").permitAll()
+                        .requestMatchers("/api/public/policies/**").permitAll()
                         .requestMatchers("/api/payments/payos/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/consultation-appointments").permitAll()
                         .requestMatchers("/api/user/favorites/**").authenticated()
@@ -64,9 +65,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/user/profile").authenticated()
 
                         // 4. QUYỀN CỦA MANAGER (QUẢN LÝ SẢN PHẨM)
-                        .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/variants/**", "/api/lens_products/**", "/api/categories").hasRole("MANAGER")
-                        .requestMatchers(HttpMethod.PUT, "/api/products/**", "/api/variants/**", "/api/lens_products/**", "/api/categories/**").hasRole("MANAGER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/variants/**", "/api/lens_products/**", "/api/categories/**").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/products/**", "/api/variants/**", "/api/lens_products/**", "/api/lens-products/**", "/api/categories", "/api/manager/policies/**", "/api/promotions/**").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**", "/api/variants/**", "/api/lens_products/**", "/api/lens-products/**", "/api/categories/**", "/api/manager/policies/**", "/api/promotions/**").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/variants/**", "/api/lens_products/**", "/api/lens-products/**", "/api/categories/**", "/api/promotions/**").hasRole("MANAGER")
+                        .requestMatchers("/api/manager/users/**", "/api/manager/revenue/**").hasRole("MANAGER")
 
                         // 5. QUYỀN CỦA ADMIN (QUẢN LÝ USER)
                         .requestMatchers("/api/user/**").hasRole("ADMIN")

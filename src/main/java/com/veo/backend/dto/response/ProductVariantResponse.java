@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @Builder
 public class ProductVariantResponse {
     private Long id;
+    private Long productId;
 
     private String sku;
 

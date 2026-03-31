@@ -2,7 +2,9 @@ package com.veo.backend.service.impl;
 
 import com.veo.backend.dto.request.ProductCreateRequest;
 import com.veo.backend.dto.request.ProductImageRequest;
+import com.veo.backend.dto.request.ProductSearchRequest;
 import com.veo.backend.dto.request.ProductUpdateRequest;
+import com.veo.backend.dto.response.PagedResponse;
 import com.veo.backend.dto.response.ProductResponse;
 import com.veo.backend.entity.Category;
 import com.veo.backend.entity.Product;
@@ -58,6 +60,35 @@ public class ProductServiceImpl implements ProductService {
                 .stream()
                 .map(productResponseMapper::map)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PagedResponse<ProductResponse> searchProducts(ProductSearchRequest request) {
+        List<ProductResponse> filteredProducts = productRepository.findAll().stream()
+                .filter(product -> request.getActive() == null || Objects.equals(product.getIsActive(), request.getActive()))
+                .filter(product -> request.getStatus() == null || product.getStatus() == request.getStatus())
+                .filter(product -> request.getCatalogType() == null || product.getCatalogType() == request.getCatalogType())
+                .filter(product -> request.getCategoryId() == null || (product.getCategory() != null && request.getCategoryId().equals(product.getCategory().getId())))
+                .filter(product -> matchesKeyword(product, request.getKeyword()))
+                .sorted(productDisplayOrder())
+                .map(productResponseMapper::map)
+                .toList();
+
+        int safePage = Math.max(request.getPage(), 0);
+        int safeSize = Math.max(request.getSize(), 1);
+        int fromIndex = Math.min(safePage * safeSize, filteredProducts.size());
+        int toIndex = Math.min(fromIndex + safeSize, filteredProducts.size());
+        int totalPages = filteredProducts.isEmpty() ? 0 : (int) Math.ceil((double) filteredProducts.size() / safeSize);
+
+        return PagedResponse.<ProductResponse>builder()
+                .content(filteredProducts.subList(fromIndex, toIndex))
+                .page(safePage)
+                .size(safeSize)
+                .totalElements(filteredProducts.size())
+                .totalPages(totalPages)
+                .last(toIndex >= filteredProducts.size())
+                .build();
     }
 
     @Override
@@ -219,6 +250,22 @@ public class ProductServiceImpl implements ProductService {
 
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private boolean matchesKeyword(Product product, String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return true;
+        }
+
+        String normalizedKeyword = keyword.trim().toLowerCase(Locale.ROOT);
+        return contains(product.getName(), normalizedKeyword)
+                || contains(product.getBrand(), normalizedKeyword)
+                || contains(product.getDescription(), normalizedKeyword)
+                || contains(product.getMaterial(), normalizedKeyword);
+    }
+
+    private boolean contains(String value, String keyword) {
+        return value != null && value.toLowerCase(Locale.ROOT).contains(keyword);
     }
 }
 
