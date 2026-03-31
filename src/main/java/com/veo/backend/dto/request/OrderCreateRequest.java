@@ -17,8 +17,6 @@ public class OrderCreateRequest {
     @NotNull(message = "Prescription option is required")
     private PrescriptionOption prescriptionOption;
 
-    private Long lensProductId;
-
     @Valid
     private ShippingAddressRequest shippingAddress;
 

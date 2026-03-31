@@ -94,7 +94,6 @@ public class OrderServiceImpl implements OrderService {
 
             OrderItem orderItem = new OrderItem();
             orderItem.setProductVariant(variant);
-            orderItem.setLensProduct(null);
             orderItem.setQuantity(quantity);
             orderItem.setPrice(itemTotal);
             orderItems.add(orderItem);
@@ -449,8 +448,8 @@ public class OrderServiceImpl implements OrderService {
 
     private void validatePrescriptionRequest(OrderCreateRequest request, PrescriptionOption prescriptionOption) {
         boolean hasPrescription = request.getPrescription() != null;
-        boolean hasLensSelection = request.getLensProductId() != null || (request.getItems() != null && request.getItems().stream()
-                .anyMatch(item -> item.getLensProductId() != null));
+        boolean hasLensSelection = request.getItems() != null && request.getItems().stream()
+                .anyMatch(item -> item.getLensProductId() != null);
 
         if (prescriptionOption == PrescriptionOption.WITHOUT_PRESCRIPTION) {
             if (hasPrescription || hasLensSelection) {
@@ -502,8 +501,8 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private LensProduct resolveSelectedLens(OrderCreateRequest request, PrescriptionOption prescriptionOption) {
-        Long lensProductId = request.getLensProductId();
-        if (lensProductId == null && request.getItems() != null) {
+        Long lensProductId = null;
+        if (request.getItems() != null) {
             lensProductId = request.getItems().stream()
                     .map(OrderItemRequest::getLensProductId)
                     .filter(Objects::nonNull)
