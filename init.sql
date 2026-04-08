@@ -223,6 +223,7 @@ CREATE TABLE prescriptions (
     created_at DATETIME,
     staff_note TEXT,
     
+    UNIQUE KEY uk_prescriptions_order_id (order_id),
     FOREIGN KEY (order_id) REFERENCES orders(id),
     FOREIGN KEY (lens_product_id) REFERENCES lens_products(id),
     FOREIGN KEY (verified_by) REFERENCES users(id)

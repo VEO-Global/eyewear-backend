@@ -6,6 +6,7 @@ import com.veo.backend.enums.PaymentMethod;
 import com.veo.backend.enums.PaymentStatus;
 import com.veo.backend.enums.PrescriptionOption;
 import com.veo.backend.enums.PrescriptionReviewStatus;
+import com.veo.backend.enums.StaffOrderPhase;
 import lombok.Builder;
 import lombok.Data;
 
@@ -24,6 +25,9 @@ public class OrderResponse {
     private OrderStatus status;
     private OrderStatus orderStatus;
     private String statusLabel;
+    private StaffOrderPhase phase;
+    private StaffOrderPhase orderPhase;
+    private String phaseLabel;
     private String customerTab;
     private OrderType orderType;
     private PrescriptionOption prescriptionOption;

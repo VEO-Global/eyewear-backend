@@ -1,6 +1,7 @@
 package com.veo.backend.repository;
 
 import com.veo.backend.entity.Payment;
+import com.veo.backend.enums.PaymentMethod;
 import com.veo.backend.enums.PaymentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,6 +22,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByOrderIdIn(Collection<Long> orderIds);
 
     List<Payment> findByStatus(PaymentStatus status);
+
+    List<Payment> findByMethodAndStatusOrderByCreatedAtDesc(PaymentMethod method, PaymentStatus status);
 
     Page<Payment> findAll(Pageable pageable);
 }

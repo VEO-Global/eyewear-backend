@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface PrescriptionRepository extends JpaRepository<Prescription, Long> {
     @EntityGraph(attributePaths = {"order", "order.user", "lensProduct", "verifiedBy"})
-    java.util.Optional<Prescription> findByOrderId(Long orderId);
+    java.util.Optional<Prescription> findFirstByOrderIdOrderByIdDesc(Long orderId);
 
     @EntityGraph(attributePaths = {"order", "order.user", "lensProduct", "verifiedBy"})
     List<Prescription> findByOrderIdIn(Collection<Long> orderIds);

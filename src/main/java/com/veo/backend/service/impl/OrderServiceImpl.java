@@ -408,12 +408,7 @@ public class OrderServiceImpl implements OrderService {
                 continue;
             }
 
-            CartItem matchedItem = cart.getItems().stream()
-                    .filter(cartItem -> cartItem.getProductVariant() != null
-                            && variantId.equals(cartItem.getProductVariant().getId())
-                            && sameLens(cartItem, lensProductId))
-                    .findFirst()
-                    .orElse(null);
+            CartItem matchedItem = findMatchingCartItem(cart, variantId, lensProductId);
 
             if (matchedItem == null) {
                 continue;
@@ -433,6 +428,41 @@ public class OrderServiceImpl implements OrderService {
         cartRepository.save(cart);
     }
 
+    private CartItem findMatchingCartItem(Cart cart, Long variantId, Long lensProductId) {
+        if (cart == null || cart.getItems() == null || cart.getItems().isEmpty() || variantId == null) {
+            return null;
+        }
+
+        List<CartItem> variantMatches = cart.getItems().stream()
+                .filter(cartItem -> cartItem.getProductVariant() != null
+                        && variantId.equals(cartItem.getProductVariant().getId()))
+                .toList();
+
+        if (variantMatches.isEmpty()) {
+            return null;
+        }
+
+        CartItem exactMatch = variantMatches.stream()
+                .filter(cartItem -> sameLens(cartItem, lensProductId))
+                .findFirst()
+                .orElse(null);
+        if (exactMatch != null) {
+            return exactMatch;
+        }
+
+        if (lensProductId != null) {
+            CartItem variantOnlyMatch = variantMatches.stream()
+                    .filter(cartItem -> cartItem.getLensProduct() == null || cartItem.getLensProduct().getId() == null)
+                    .findFirst()
+                    .orElse(null);
+            if (variantOnlyMatch != null) {
+                return variantOnlyMatch;
+            }
+        }
+
+        return variantMatches.size() == 1 ? variantMatches.getFirst() : null;
+    }
+
     private boolean sameLens(CartItem cartItem, Long lensProductId) {
         if (lensProductId == null) {
             return cartItem.getLensProduct() == null || cartItem.getLensProduct().getId() == null;
@@ -442,7 +472,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private OrderResponse mapOrderResponse(Order order) {
-        Prescription prescription = prescriptionRepository.findByOrderId(order.getId()).orElse(null);
+        Prescription prescription = prescriptionRepository.findFirstByOrderIdOrderByIdDesc(order.getId()).orElse(null);
         Payment payment = paymentRepository.findFirstByOrderIdOrderByIdDesc(order.getId()).orElse(null);
         BigDecimal subtotal = defaultAmount(order.getTotalAmount()).subtract(defaultAmount(order.getShippingFee())).add(defaultAmount(order.getDiscountAmount()));
         BigDecimal lensPrice = prescription != null ? defaultAmount(prescription.getLensPriceSnapshot()) : BigDecimal.ZERO;
@@ -456,7 +486,10 @@ public class OrderServiceImpl implements OrderService {
                 .status(order.getStatus())
                 .orderStatus(order.getStatus())
                 .statusLabel(getStatusLabel(order.getStatus()))
-                .customerTab(getCustomerTab(order.getStatus()))
+                .phase(OrderFlowStateResolver.resolvePhase(order, prescription))
+                .orderPhase(OrderFlowStateResolver.resolvePhase(order, prescription))
+                .phaseLabel(OrderFlowStateResolver.resolvePhaseLabel(order, prescription))
+                .customerTab(OrderCustomerTabResolver.resolve(order.getStatus()))
                 .orderType(order.getOrderType())
                 .totalAmount(order.getTotalAmount())
                 .subtotal(subtotal.max(BigDecimal.ZERO))
@@ -765,13 +798,13 @@ public class OrderServiceImpl implements OrderService {
             case "cho-gia-cong" -> Arrays.asList(
                     OrderStatus.PENDING_VERIFICATION,
                     OrderStatus.MANUFACTURING,
-                    OrderStatus.PACKING,
-                    OrderStatus.READY_TO_SHIP
+                    OrderStatus.PACKING
             );
-            case "van-chuyen" -> List.of(OrderStatus.SHIPPING);
+            case "van-chuyen" -> List.of(OrderStatus.READY_TO_SHIP);
             case "cho-giao-hang" -> Arrays.asList(
                     OrderStatus.PENDING_PAYMENT,
-                    OrderStatus.WAITING_FOR_STOCK
+                    OrderStatus.WAITING_FOR_STOCK,
+                    OrderStatus.SHIPPING
             );
             case "hoan-thanh" -> List.of(OrderStatus.COMPLETED);
             case "da-huy" -> List.of(OrderStatus.CANCELLED);
@@ -798,19 +831,6 @@ public class OrderServiceImpl implements OrderService {
         };
     }
 
-    private String getCustomerTab(OrderStatus status) {
-        if (status == null) {
-            return "tat-ca";
-        }
-
-        return switch (status) {
-            case PENDING_VERIFICATION, MANUFACTURING, PACKING, READY_TO_SHIP -> "cho-gia-cong";
-            case SHIPPING -> "van-chuyen";
-            case PENDING_PAYMENT, WAITING_FOR_STOCK -> "cho-giao-hang";
-            case COMPLETED -> "hoan-thanh";
-            case CANCELLED -> "da-huy";
-        };
-    }
 }
 
 

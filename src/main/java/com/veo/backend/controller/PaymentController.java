@@ -1,6 +1,7 @@
 package com.veo.backend.controller;
 
 import com.veo.backend.dto.request.PaymentConfirmRequest;
+import com.veo.backend.dto.request.PayosPaymentActionRequest;
 import com.veo.backend.dto.response.PagedResponse;
 import com.veo.backend.dto.response.PaymentQrResponse;
 import com.veo.backend.dto.response.PaymentSummaryResponse;
@@ -14,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
@@ -39,6 +41,51 @@ public class PaymentController {
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<List<PaymentSummaryResponse>> getMyPayments(Authentication authentication) {
         return ResponseEntity.ok(paymentService.getMyPayments(authentication.getName()));
+    }
+
+    @PostMapping("/payos/confirm")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<PaymentSummaryResponse> confirmFakePayosPayment(
+            Authentication authentication,
+            @RequestBody @Valid PayosPaymentActionRequest request
+    ) {
+        return ResponseEntity.ok(paymentService.confirmFakePayosPayment(authentication.getName(), request));
+    }
+
+    @PostMapping("/payos/approve")
+    @PreAuthorize("hasAnyRole('SALES','MANAGER','ADMIN')")
+    public ResponseEntity<PaymentSummaryResponse> approveFakePayosPayment(
+            Authentication authentication,
+            @RequestBody @Valid PayosPaymentActionRequest request
+    ) {
+        return ResponseEntity.ok(paymentService.approveFakePayosPayment(authentication.getName(), request));
+    }
+
+    @PostMapping("/payos/reject")
+    @PreAuthorize("hasAnyRole('SALES','MANAGER','ADMIN')")
+    public ResponseEntity<PaymentSummaryResponse> rejectFakePayosPayment(
+            Authentication authentication,
+            @RequestBody @Valid PayosPaymentActionRequest request
+    ) {
+        return ResponseEntity.ok(paymentService.rejectFakePayosPayment(authentication.getName(), request));
+    }
+
+    @GetMapping("/payos/pending")
+    @PreAuthorize("hasAnyRole('SALES','MANAGER','ADMIN')")
+    public ResponseEntity<List<PaymentSummaryResponse>> getPendingFakePayosPayments() {
+        return ResponseEntity.ok(paymentService.getPendingFakePayosPayments());
+    }
+
+    @GetMapping(path = "/payos/stream/customer", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public SseEmitter subscribeCustomerPaymentEvents(Authentication authentication) {
+        return paymentService.subscribeCustomerPaymentEvents(authentication.getName());
+    }
+
+    @GetMapping(path = "/payos/stream/staff", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PreAuthorize("hasAnyRole('SALES','MANAGER','ADMIN')")
+    public SseEmitter subscribeStaffPaymentEvents(Authentication authentication) {
+        return paymentService.subscribeStaffPaymentEvents(authentication.getName());
     }
 
     @PostMapping("/order/{orderId}/confirm")

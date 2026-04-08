@@ -42,7 +42,7 @@ public class PrescriptionReviewServiceImpl implements PrescriptionReviewService 
     @Override
     @Transactional(readOnly = true)
     public PrescriptionReviewResponse getOrderPrescription(Long orderId) {
-        Prescription prescription = prescriptionRepository.findByOrderId(orderId)
+        Prescription prescription = prescriptionRepository.findFirstByOrderIdOrderByIdDesc(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Prescription not found for order"));
         return mapResponse(prescription);
     }

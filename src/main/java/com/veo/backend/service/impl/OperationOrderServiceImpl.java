@@ -23,6 +23,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class OperationOrderServiceImpl implements OperationOrderService {
+    private static final String HANDOFF_NOTE_KEYWORD = "handed off to operations";
     private static final Set<OrderStatus> OPERATION_STATUSES = EnumSet.of(
             OrderStatus.WAITING_FOR_STOCK,
             OrderStatus.MANUFACTURING,
@@ -42,8 +43,10 @@ public class OperationOrderServiceImpl implements OperationOrderService {
     @Transactional(readOnly = true)
     public List<OrderResponse> getOrders(String orderType, String status, String keyword) {
         List<Order> orders = orderRepository.findAllByOrderByCreatedAtDesc();
-        Map<Long, Prescription> prescriptionsByOrderId = getPrescriptionsByOrderId(extractOrderIds(orders));
-        Map<Long, Payment> latestPaymentsByOrderId = getLatestPaymentsByOrderId(extractOrderIds(orders));
+        List<Long> orderIds = extractOrderIds(orders);
+        Set<Long> handedOffOrderIds = getHandedOffOrderIds(orderIds);
+        Map<Long, Prescription> prescriptionsByOrderId = getPrescriptionsByOrderId(orderIds);
+        Map<Long, Payment> latestPaymentsByOrderId = getLatestPaymentsByOrderId(orderIds);
 
         OrderType expectedType = parseOrderType(orderType);
         OrderStatus expectedStatus = parseOrderStatus(status);
@@ -51,6 +54,7 @@ public class OperationOrderServiceImpl implements OperationOrderService {
 
         return orders.stream()
                 .filter(this::isOperationOrder)
+                .filter(order -> order.getId() != null && handedOffOrderIds.contains(order.getId()))
                 .filter(order -> expectedType == null || order.getOrderType() == expectedType)
                 .filter(order -> expectedStatus == null || order.getStatus() == expectedStatus)
                 .filter(order -> matchesKeyword(order, normalizedKeyword))
@@ -65,9 +69,12 @@ public class OperationOrderServiceImpl implements OperationOrderService {
     @Override
     @Transactional(readOnly = true)
     public OperationOrderSummaryResponse getOrderSummary() {
-        List<Order> orders = orderRepository.findAllByOrderByCreatedAtDesc()
+        List<Order> allOrders = orderRepository.findAllByOrderByCreatedAtDesc();
+        Set<Long> handedOffOrderIds = getHandedOffOrderIds(extractOrderIds(allOrders));
+        List<Order> orders = allOrders
                 .stream()
                 .filter(this::isOperationOrder)
+                .filter(order -> order.getId() != null && handedOffOrderIds.contains(order.getId()))
                 .toList();
 
         return OperationOrderSummaryResponse.builder()
@@ -89,7 +96,11 @@ public class OperationOrderServiceImpl implements OperationOrderService {
     public OrderResponse getOrderDetail(Long id) {
         Order order = orderRepository.findDetailedById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Order not found"));
-        Prescription prescription = prescriptionRepository.findByOrderId(order.getId()).orElse(null);
+        ensureOrderIsHandedOff(order);
+        if (!isOperationOrder(order)) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "Order is not in operations flow");
+        }
+        Prescription prescription = prescriptionRepository.findFirstByOrderIdOrderByIdDesc(order.getId()).orElse(null);
         Payment payment = paymentRepository.findFirstByOrderIdOrderByIdDesc(order.getId()).orElse(null);
         return toOrderResponse(order, prescription, payment);
     }
@@ -99,6 +110,7 @@ public class OperationOrderServiceImpl implements OperationOrderService {
     public OrderResponse updateOrderStatus(Long id, String actorEmail, OperationStatusUpdateRequest request) {
         Order order = orderRepository.findDetailedById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Order not found"));
+        ensureOrderIsHandedOff(order);
         OrderStatus targetStatus = request.getStatus();
 
         if (!OPERATION_STATUSES.contains(targetStatus) || targetStatus == OrderStatus.WAITING_FOR_STOCK) {
@@ -109,7 +121,7 @@ public class OperationOrderServiceImpl implements OperationOrderService {
         applyStatus(order, targetStatus, actorEmail, request.getNote());
 
         Order savedOrder = orderRepository.save(order);
-        Prescription prescription = prescriptionRepository.findByOrderId(savedOrder.getId()).orElse(null);
+        Prescription prescription = prescriptionRepository.findFirstByOrderIdOrderByIdDesc(savedOrder.getId()).orElse(null);
         Payment payment = paymentRepository.findFirstByOrderIdOrderByIdDesc(savedOrder.getId()).orElse(null);
         return toOrderResponse(savedOrder, prescription, payment);
     }
@@ -120,6 +132,7 @@ public class OperationOrderServiceImpl implements OperationOrderService {
         Order order = orderRepository.findDetailedById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Order not found"));
 
+        ensureOrderIsHandedOff(order);
         validateOrderIsActive(order);
 
         order.setLogisticsProvider(normalizeNullable(request.getCarrier()));
@@ -130,7 +143,7 @@ public class OperationOrderServiceImpl implements OperationOrderService {
         saveHistory(order, actorEmail, buildLogisticsNote(request));
 
         Order savedOrder = orderRepository.save(order);
-        Prescription prescription = prescriptionRepository.findByOrderId(savedOrder.getId()).orElse(null);
+        Prescription prescription = prescriptionRepository.findFirstByOrderIdOrderByIdDesc(savedOrder.getId()).orElse(null);
         Payment payment = paymentRepository.findFirstByOrderIdOrderByIdDesc(savedOrder.getId()).orElse(null);
         return toOrderResponse(savedOrder, prescription, payment);
     }
@@ -141,6 +154,7 @@ public class OperationOrderServiceImpl implements OperationOrderService {
         Order order = orderRepository.findDetailedById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Order not found"));
 
+        ensureOrderIsHandedOff(order);
         validateOrderIsActive(order);
 
         order.setTrackingNumber(request.getTrackingNumber().trim());
@@ -150,7 +164,7 @@ public class OperationOrderServiceImpl implements OperationOrderService {
         saveHistory(order, actorEmail, "Tracking updated: " + request.getTrackingNumber().trim());
 
         Order savedOrder = orderRepository.save(order);
-        Prescription prescription = prescriptionRepository.findByOrderId(savedOrder.getId()).orElse(null);
+        Prescription prescription = prescriptionRepository.findFirstByOrderIdOrderByIdDesc(savedOrder.getId()).orElse(null);
         Payment payment = paymentRepository.findFirstByOrderIdOrderByIdDesc(savedOrder.getId()).orElse(null);
         return toOrderResponse(savedOrder, prescription, payment);
     }
@@ -160,6 +174,7 @@ public class OperationOrderServiceImpl implements OperationOrderService {
     public OrderResponse receivePreOrderStock(Long id, String actorEmail, OperationReceiveStockRequest request) {
         Order order = orderRepository.findDetailedById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Order not found"));
+        ensureOrderIsHandedOff(order);
 
         if (order.getOrderType() != OrderType.PRE_ORDER) {
             throw new AppException(ErrorCode.VALIDATION_ERROR, "Only pre-order items can receive stock");
@@ -193,13 +208,31 @@ public class OperationOrderServiceImpl implements OperationOrderService {
         applyStatus(order, OrderStatus.PACKING, actorEmail, defaultIfBlank(request.getNote(), "Pre-order stock received"));
 
         Order savedOrder = orderRepository.save(order);
-        Prescription prescription = prescriptionRepository.findByOrderId(savedOrder.getId()).orElse(null);
+        Prescription prescription = prescriptionRepository.findFirstByOrderIdOrderByIdDesc(savedOrder.getId()).orElse(null);
         Payment payment = paymentRepository.findFirstByOrderIdOrderByIdDesc(savedOrder.getId()).orElse(null);
         return toOrderResponse(savedOrder, prescription, payment);
     }
 
     private boolean isOperationOrder(Order order) {
         return order != null && order.getStatus() != null && OPERATION_STATUSES.contains(order.getStatus());
+    }
+
+    private Set<Long> getHandedOffOrderIds(Collection<Long> orderIds) {
+        if (orderIds == null || orderIds.isEmpty()) {
+            return Set.of();
+        }
+        return orderStatusHistoryRepository.findOrderIdsByHandoffKeyword(orderIds, HANDOFF_NOTE_KEYWORD);
+    }
+
+    private void ensureOrderIsHandedOff(Order order) {
+        if (order == null || order.getId() == null) {
+            throw new AppException(ErrorCode.ORDER_NOT_FOUND, "Order not found");
+        }
+
+        boolean handedOff = orderStatusHistoryRepository.existsHandoffMarker(order.getId(), HANDOFF_NOTE_KEYWORD);
+        if (!handedOff) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR, "Order has not been handed off to operations");
+        }
     }
 
     private long countByStatus(List<Order> orders, OrderStatus status) {
@@ -383,7 +416,13 @@ public class OperationOrderServiceImpl implements OperationOrderService {
         Map<Long, Prescription> prescriptionsByOrderId = new HashMap<>();
         for (Prescription prescription : prescriptionRepository.findByOrderIdIn(orderIds)) {
             if (prescription.getOrder() != null && prescription.getOrder().getId() != null) {
-                prescriptionsByOrderId.put(prescription.getOrder().getId(), prescription);
+                Long orderId = prescription.getOrder().getId();
+                Prescription current = prescriptionsByOrderId.get(orderId);
+                if (current == null
+                        || (prescription.getId() != null && current.getId() != null && prescription.getId() > current.getId())
+                        || current.getId() == null) {
+                    prescriptionsByOrderId.put(orderId, prescription);
+                }
             }
         }
         return prescriptionsByOrderId;
@@ -427,7 +466,10 @@ public class OperationOrderServiceImpl implements OperationOrderService {
                 .status(order.getStatus())
                 .orderStatus(order.getStatus())
                 .statusLabel(getStatusLabel(order.getStatus()))
-                .customerTab(getCustomerTab(order.getStatus()))
+                .phase(OrderFlowStateResolver.resolvePhase(order, prescription))
+                .orderPhase(OrderFlowStateResolver.resolvePhase(order, prescription))
+                .phaseLabel(OrderFlowStateResolver.resolvePhaseLabel(order, prescription))
+                .customerTab(OrderCustomerTabResolver.resolve(order.getStatus()))
                 .orderType(order.getOrderType())
                 .prescriptionOption(order.getPrescriptionOption())
                 .prescriptionReviewStatus(prescription != null ? resolveEffectiveReviewStatus(prescription) : null)
@@ -654,17 +696,4 @@ public class OperationOrderServiceImpl implements OperationOrderService {
         };
     }
 
-    private String getCustomerTab(OrderStatus status) {
-        if (status == null) {
-            return "tat-ca";
-        }
-
-        return switch (status) {
-            case PENDING_VERIFICATION, MANUFACTURING, PACKING, READY_TO_SHIP -> "cho-gia-cong";
-            case SHIPPING -> "van-chuyen";
-            case PENDING_PAYMENT, WAITING_FOR_STOCK -> "cho-giao-hang";
-            case COMPLETED -> "hoan-thanh";
-            case CANCELLED -> "da-huy";
-        };
-    }
 }

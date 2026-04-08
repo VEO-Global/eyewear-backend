@@ -56,7 +56,7 @@ public class StaffOrderServiceImpl implements StaffOrderService {
     public StaffOrderResponse getOrderDetail(Long id) {
         Order order = orderRepository.findDetailedById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Order not found"));
-        Prescription prescription = prescriptionRepository.findByOrderId(order.getId()).orElse(null);
+        Prescription prescription = prescriptionRepository.findFirstByOrderIdOrderByIdDesc(order.getId()).orElse(null);
         Payment payment = paymentRepository.findFirstByOrderIdOrderByIdDesc(order.getId()).orElse(null);
         return toStaffOrderResponse(order, prescription, payment);
     }
@@ -66,7 +66,11 @@ public class StaffOrderServiceImpl implements StaffOrderService {
     public StaffOrderResponse updateOrderPhase(Long id, String actorEmail, StaffOrderPhaseUpdateRequest request) {
         Order order = orderRepository.findDetailedById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Order not found"));
-        Prescription prescription = prescriptionRepository.findByOrderId(order.getId()).orElse(null);
+        Prescription prescription = prescriptionRepository.findFirstByOrderIdOrderByIdDesc(order.getId()).orElse(null);
+
+        if (request.getPhase() == StaffOrderPhase.READY_TO_DELIVER) {
+            validateReadyForHandoff(order, prescription);
+        }
 
         OrderStatus targetStatus = resolveTargetStatus(order, prescription, request.getPhase());
         validateTransition(order.getStatus(), targetStatus);
@@ -96,10 +100,26 @@ public class StaffOrderServiceImpl implements StaffOrderService {
     @Override
     @Transactional
     public StaffOrderResponse handoffOrder(Long id, String actorEmail) {
-        StaffOrderPhaseUpdateRequest request = new StaffOrderPhaseUpdateRequest();
-        request.setPhase(StaffOrderPhase.READY_TO_DELIVER);
-        request.setNote("Handed off to operations");
-        return updateOrderPhase(id, actorEmail, request);
+        Order order = orderRepository.findDetailedById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Order not found"));
+        Prescription prescription = prescriptionRepository.findFirstByOrderIdOrderByIdDesc(order.getId()).orElse(null);
+
+        validateReadyForHandoff(order, prescription);
+
+        if (OrderFlowStateResolver.resolvePhase(order, prescription) != StaffOrderPhase.READY_TO_DELIVER) {
+            throw new AppException(
+                    ErrorCode.VALIDATION_ERROR,
+                    "Order is not ready to hand off to operations"
+            );
+        }
+
+        OrderStatus targetStatus = resolveTargetStatus(order, prescription, StaffOrderPhase.READY_TO_DELIVER);
+        validateTransition(order.getStatus(), targetStatus);
+        applyStatus(order, targetStatus, actorEmail, "Handed off to operations");
+
+        Order savedOrder = orderRepository.save(order);
+        Payment payment = paymentRepository.findFirstByOrderIdOrderByIdDesc(savedOrder.getId()).orElse(null);
+        return toStaffOrderResponse(savedOrder, prescription, payment);
     }
 
     @Override
@@ -163,20 +183,20 @@ public class StaffOrderServiceImpl implements StaffOrderService {
             return true;
         }
 
-        return isReadyToDeliver(order, prescription);
+        return OrderFlowStateResolver.isReadyToDeliver(order, prescription);
     }
 
     private StaffOrderResponse toStaffOrderResponse(Order order, Prescription prescription, Payment payment) {
-        boolean requiresPrescription = order.getPrescriptionOption() == PrescriptionOption.WITH_PRESCRIPTION || prescription != null;
-        PrescriptionReviewStatus effectiveReviewStatus = resolveEffectiveReviewStatus(order, prescription);
+        boolean requiresPrescription = OrderFlowStateResolver.requiresPrescription(order, prescription);
+        PrescriptionReviewStatus effectiveReviewStatus = OrderFlowStateResolver.resolveEffectiveReviewStatus(order, prescription);
 
         return StaffOrderResponse.builder()
                 .id(order.getId())
                 .orderNumber(order.getOrderCode())
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt() != null ? order.getUpdatedAt() : order.getCreatedAt())
-                .phase(resolvePhase(order, prescription))
-                .phaseLabel(resolvePhaseLabel(order, prescription))
+                .phase(OrderFlowStateResolver.resolvePhase(order, prescription))
+                .phaseLabel(OrderFlowStateResolver.resolvePhaseLabel(order, prescription))
                 .status(order.getStatus() != null ? order.getStatus().name() : null)
                 .paymentStatus(payment != null ? payment.getStatus() : PaymentStatus.UNPAID)
                 .totalAmount(defaultAmount(order.getTotalAmount()).add(defaultAmount(order.getShippingFee())).subtract(defaultAmount(order.getDiscountAmount())))
@@ -210,7 +230,13 @@ public class StaffOrderServiceImpl implements StaffOrderService {
         Map<Long, Prescription> prescriptionsByOrderId = new HashMap<>();
         for (Prescription prescription : prescriptionRepository.findByOrderIdIn(orderIds)) {
             if (prescription.getOrder() != null && prescription.getOrder().getId() != null) {
-                prescriptionsByOrderId.put(prescription.getOrder().getId(), prescription);
+                Long orderId = prescription.getOrder().getId();
+                Prescription current = prescriptionsByOrderId.get(orderId);
+                if (current == null
+                        || (prescription.getId() != null && current.getId() != null && prescription.getId() > current.getId())
+                        || current.getId() == null) {
+                    prescriptionsByOrderId.put(orderId, prescription);
+                }
             }
         }
         return prescriptionsByOrderId;
@@ -334,62 +360,41 @@ public class StaffOrderServiceImpl implements StaffOrderService {
                 .axisOd(prescription.getAxisOd())
                 .axisOs(prescription.getAxisOs())
                 .pd(prescription.getPd())
-                .reviewStatus(resolveEffectiveReviewStatus(order, prescription))
+                .reviewStatus(OrderFlowStateResolver.resolveEffectiveReviewStatus(order, prescription))
                 .reviewNote(prescription.getReviewNote())
                 .build();
-    }
-
-    private StaffOrderPhase resolvePhase(Order order, Prescription prescription) {
-        if (requiresPrescription(order, prescription) && !isPrescriptionApproved(order, prescription)) {
-            return StaffOrderPhase.PRESCRIPTION_REVIEW;
-        }
-
-        if (order.getStatus() == null) {
-            return StaffOrderPhase.PENDING_CONFIRMATION;
-        }
-
-        return switch (order.getStatus()) {
-            case PENDING_PAYMENT, WAITING_FOR_STOCK -> StaffOrderPhase.PENDING_CONFIRMATION;
-            case PENDING_VERIFICATION -> isReadyToDeliver(order, prescription)
-                    ? StaffOrderPhase.READY_TO_DELIVER
-                    : StaffOrderPhase.PENDING_CONFIRMATION;
-            case MANUFACTURING, PACKING -> StaffOrderPhase.PROCESSING;
-            case READY_TO_SHIP -> StaffOrderPhase.READY_TO_DELIVER;
-            case SHIPPING -> StaffOrderPhase.SHIPPING;
-            case COMPLETED -> StaffOrderPhase.COMPLETED;
-            case CANCELLED -> StaffOrderPhase.CANCELED;
-        };
-    }
-
-    private String resolvePhaseLabel(Order order, Prescription prescription) {
-        return switch (resolvePhase(order, prescription)) {
-            case PENDING_CONFIRMATION -> "Pending confirmation";
-            case PRESCRIPTION_REVIEW -> "Prescription review";
-            case PROCESSING -> "Processing";
-            case READY_TO_DELIVER -> "Ready to deliver";
-            case SHIPPING -> "Shipping";
-            case COMPLETED -> "Completed";
-            case CANCELED -> "Canceled";
-            case RETURN_REFUND -> "Return / refund";
-        };
     }
 
     private OrderStatus resolveTargetStatus(Order order, Prescription prescription, StaffOrderPhase phase) {
         return switch (phase) {
             case PENDING_CONFIRMATION -> OrderStatus.PENDING_VERIFICATION;
             case PRESCRIPTION_REVIEW -> {
-                if (!requiresPrescription(order, prescription)) {
+                if (!OrderFlowStateResolver.requiresPrescription(order, prescription)) {
                     throw new AppException(ErrorCode.VALIDATION_ERROR, "Order does not require prescription review");
                 }
                 yield OrderStatus.PENDING_VERIFICATION;
             }
-            case PROCESSING -> OrderStatus.MANUFACTURING;
+            case PROCESSING -> OrderStatus.PENDING_VERIFICATION;
             case READY_TO_DELIVER -> resolveReadyToDeliverStatus(order, prescription);
             case SHIPPING -> OrderStatus.SHIPPING;
             case COMPLETED -> OrderStatus.COMPLETED;
             case CANCELED -> OrderStatus.CANCELLED;
             case RETURN_REFUND -> throw new AppException(ErrorCode.VALIDATION_ERROR, "Return/refund flow is not implemented for staff orders");
         };
+    }
+
+    private void validateReadyForHandoff(Order order, Prescription prescription) {
+        if (order == null) {
+            throw new AppException(ErrorCode.ORDER_NOT_FOUND, "Order not found");
+        }
+
+        if (OrderFlowStateResolver.requiresPrescription(order, prescription)
+                && OrderFlowStateResolver.resolveEffectiveReviewStatus(order, prescription) != PrescriptionReviewStatus.APPROVED) {
+            throw new AppException(
+                    ErrorCode.VALIDATION_ERROR,
+                    "Prescription must be approved before handoff to operations"
+            );
+        }
     }
 
     private OrderStatus resolveReadyToDeliverStatus(Order order, Prescription prescription) {
@@ -401,7 +406,7 @@ public class StaffOrderServiceImpl implements StaffOrderService {
             return OrderStatus.WAITING_FOR_STOCK;
         }
 
-        if (requiresPrescription(order, prescription)) {
+        if (OrderFlowStateResolver.requiresPrescription(order, prescription)) {
             return OrderStatus.MANUFACTURING;
         }
 
@@ -489,47 +494,6 @@ public class StaffOrderServiceImpl implements StaffOrderService {
             parts.add(note.trim());
         }
         return parts.isEmpty() ? null : String.join(" | ", parts);
-    }
-
-    private boolean requiresPrescription(Order order, Prescription prescription) {
-        return order.getPrescriptionOption() == PrescriptionOption.WITH_PRESCRIPTION || prescription != null;
-    }
-
-    private boolean isPrescriptionApproved(Order order, Prescription prescription) {
-        return requiresPrescription(order, prescription)
-                && resolveEffectiveReviewStatus(order, prescription) == PrescriptionReviewStatus.APPROVED;
-    }
-
-    private boolean isReadyToDeliver(Order order, Prescription prescription) {
-        if (order == null || order.getStatus() != OrderStatus.PENDING_VERIFICATION) {
-            return false;
-        }
-
-        if (!requiresPrescription(order, prescription)) {
-            return true;
-        }
-
-        return isPrescriptionApproved(order, prescription);
-    }
-
-    private PrescriptionReviewStatus resolveEffectiveReviewStatus(Order order, Prescription prescription) {
-        if (!requiresPrescription(order, prescription)) {
-            return null;
-        }
-
-        if (prescription == null) {
-            return PrescriptionReviewStatus.PENDING;
-        }
-
-        if (prescription.getReviewStatus() != null) {
-            return prescription.getReviewStatus();
-        }
-
-        if (prescription.getVerifiedBy() != null || prescription.getVerifiedAt() != null) {
-            return PrescriptionReviewStatus.APPROVED;
-        }
-
-        return PrescriptionReviewStatus.PENDING;
     }
 
     private String resolveVariantName(OrderItem item) {
