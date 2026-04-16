@@ -1,12 +1,12 @@
 # VEO Eyewear System
 
-## 📌 Description
+## Description
 VEO Eyewear System là hệ thống đặt kính trực tuyến cho phép người dùng tạo đơn hàng, quản lý sản phẩm và xử lý thông tin đơn hàng.  
 Dự án được xây dựng theo mô hình client-server, bao gồm Backend (REST API) và Frontend (React).
 
 ---
 
-## 🚀 Features
+## Features
 - Tạo và quản lý đơn hàng (Order Management)
 - Validate dữ liệu đầu vào
 - Quản lý sản phẩm
@@ -14,7 +14,7 @@ Dự án được xây dựng theo mô hình client-server, bao gồm Backend (R
 
 ---
 
-## 🛠 Technologies
+## Technologies
 
 ### Backend
 - Java
